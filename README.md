@@ -6,11 +6,11 @@ gateway：客户端demo<br>
 schedule：服务端demo<br>
 <br>
 编译方法：<br>
-Z-build/gatewany 目录下 执行 make clean; make<br>
+Z-build/gateway 目录下 执行 make clean; make<br>
 Z-build/schedule 目录下 执行 make clean; make<br>
 <br>
 可执行文件：<br>
-Z-build/gatewany/bin/gateway<br>
+Z-build/gateway/bin/gateway<br>
 Z-build/schedule/bin/schedule<br>
 <br>
 具体的详细功能列表如下：<br>
