@@ -41,3 +41,7 @@ PS: 没错，gateway正式作为android手机的运行程序，ndk编译，需�
 <br>
 2. 增加openssl支持，框架支持openssl加密通信，全部封装好<br>
 <br>
+<br>
+关于android下的libevent和libevent_openssl,openssl,json-c等库移植直接参考我的git库:https://github.com/seaving/android-libs.git<br>
+<br>
+
