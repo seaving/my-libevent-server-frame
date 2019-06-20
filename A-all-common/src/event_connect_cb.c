@@ -27,6 +27,7 @@ void event_connect_timer_cb(evutil_socket_t fd, short ev, void *arg)
 			if (connect->timer_cb((evexecutor_t) executor, &executor->event_buf, 
 					ev, connect->conn_fd, connect->cb_arg) == false)
 			{
+				client_fd = connect->conn_fd;
 				event_executor_release(executor);
 				event_service_job_handling_count(-1);
 				LOG_TRACE_NORMAL("stoped client event from event base [client_fd: %d].\n", 
@@ -115,6 +116,8 @@ void event_connect_buffered_event_cb(struct bufferevent *bev, short what, void *
 	connect_t *connect = NULL;
 	event_executor_t *executor = (event_executor_t *) arg;
 
+	//LOG_TRACE_NORMAL("cb event.\n");
+
 	if (executor && executor->arg)
 	{
 		connect = (connect_t *) executor->arg;
@@ -129,6 +132,10 @@ void event_connect_buffered_event_cb(struct bufferevent *bev, short what, void *
 			{
 				connect->success_cb((evexecutor_t) executor, &executor->event_buf, connect->conn_fd, connect->cb_arg);
 			}
+		}
+		else if (what & BUFFEREVENT_SSL_OPEN)
+		{
+			LOG_TRACE_NORMAL("SSL connect success [client_fd: %d].\n", connect->conn_fd);
 		}
 		else
 		{

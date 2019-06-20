@@ -9,7 +9,6 @@ static inline void _display_status()
 	static int job_wait_count = 0;
 	static int job_handling_count = 0;
 
-	
 	if (tpool_working_count != tpool_get_working_count()
 		|| evserver_working_count != event_service_get_working_count()
 		|| job_wait_count != event_service_get_job_wait_count()
@@ -94,4 +93,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-

@@ -20,7 +20,6 @@ typedef struct __connect__
 {
 	int conn_fd;
 	SSL_CTX *global_ctx;
-	SSL *ssl;
 	connect_addr_t addr;
 	unsigned int timer_out;
 	void *cb_arg;

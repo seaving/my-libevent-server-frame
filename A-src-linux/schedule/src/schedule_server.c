@@ -88,8 +88,8 @@ bool schedule_server_start()
 {
 	pthread_t tid;
 
-	SSL_CTX *ctx = event_ssl_server_init(DEFAULT_CA_CRT_FILE, 
-		DEFAULT_SVR_CRT_FILE, DEFAULT_SVR_KEY_FILE);
+	SSL_CTX *ctx = event_ssl_server_init(DEFAULT_CA_FILE, 
+		DEFAULT_CRT_FILE, DEFAULT_KEY_FILE);
 	if (ctx == NULL)
 	{
 		return false;

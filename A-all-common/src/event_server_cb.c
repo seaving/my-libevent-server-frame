@@ -123,17 +123,20 @@ static void _event_server_buffered_event_cb(struct bufferevent *bev, short what,
 	server_talk_t *talk = NULL;
 	event_executor_t *executor = (event_executor_t *) arg;
 
-	LOG_TRACE_NORMAL("cb error.\n");
-
 	talk = (server_talk_t *) executor->arg;
+
+	//LOG_TRACE_NORMAL("cb event.\n");
 
 	if (executor && executor->arg)
 	{
-		if (what & BEV_EVENT_CONNECTED)
+		if ((what & BEV_EVENT_CONNECTED) 
+			|| (what & BUFFEREVENT_SSL_OPEN))
 		{
 			LOG_TRACE_NORMAL("SSL Client connect success [client_fd: %d].\n", talk->conn_fd);
 			return;
 		}
+
+		LOG_TRACE_NORMAL("cb error.\n");
 
 		error = EVUTIL_SOCKET_ERROR();
 		client_fd = talk->conn_fd;
@@ -167,7 +170,8 @@ static bool _event_server_executor(
 		return false;
 	}
 
-	executor = event_executor_new(evbase, worker, talk->conn_fd, talk->ssl, talk, 
+	executor = event_executor_new(evbase, worker, talk->conn_fd, 
+                    talk->server->ctx, true, talk, 
 					free_arg_cb, io_timeout, timer_cb, read_cb, 
 					write_cb, error_cb);
 	if (executor == NULL)
@@ -290,14 +294,6 @@ void event_server_ssl_accept_cb(evutil_socket_t listen_fd, short ev, void *arg)
 	{
 		LOG_TRACE_NORMAL("event_server_talk_create error!\n");
 		socket_close(client_fd);
-		return;
-	}
-
-	talk->ssl = SSL_new(server->ctx);
-	if (talk->ssl == NULL)
-	{
-		LOG_TRACE_NORMAL("SSL_new error !\n");
-		event_server_talk_free(talk);
 		return;
 	}
 

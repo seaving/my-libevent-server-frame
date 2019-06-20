@@ -48,7 +48,8 @@ event_executor_t *event_executor_new(
 	struct event_base *evbase, 
 	event_worker_t *worker, 
 	int fd, 
-	SSL *ssl, 
+	SSL_CTX *ctx, 
+    bool is_sslser, 
 	void *arg, 
 	void (*free_arg_cb)(void *), 
 	unsigned int timer_out, 
@@ -115,7 +116,7 @@ event_executor_t *event_executor_new(
 			}
 		}
 
-		if (ssl)
+		if (ctx == NULL)
 		{
 			executor->event_buf.buf_ev = bufferevent_socket_new(
 					evbase, fd, BEV_OPT_CLOSE_ON_FREE);
@@ -127,10 +128,21 @@ event_executor_t *event_executor_new(
 		}
 		else
 		{
+            SSL *ssl = SSL_new(ctx);
+            if (ssl == NULL)
+            {
+                LOG_TRACE_NORMAL("SSL_new error !\n");
+                _event_executor_free(executor);
+                return NULL;
+            }
 			executor->event_buf.buf_ev = bufferevent_openssl_socket_new(
-					evbase, fd, ssl, BUFFEREVENT_SSL_ACCEPTING, BEV_OPT_CLOSE_ON_FREE);
+					evbase, fd, ssl, 
+					is_sslser ? BUFFEREVENT_SSL_ACCEPTING 
+						: BUFFEREVENT_SSL_CONNECTING, 
+                    BEV_OPT_CLOSE_ON_FREE);
 			if (executor->event_buf.buf_ev == NULL) {
 				LOG_TRACE_NORMAL("bufferevent_openssl_socket_new failed!\n");
+                SSL_free(ssl);
 				_event_executor_free(executor);
 				return NULL;
 			}
@@ -141,7 +153,7 @@ event_executor_t *event_executor_new(
 					write_cb,
 					error_cb, executor);
 		
-		if (bufferevent_enable(executor->event_buf.buf_ev, EV_READ | EV_WRITE) < 0)
+		if (bufferevent_enable(executor->event_buf.buf_ev, EV_READ /* | EV_WRITE*/) < 0)
 		{
 			LOG_TRACE_NORMAL("enable bufferevent failed!\n");
 			_event_executor_free(executor);

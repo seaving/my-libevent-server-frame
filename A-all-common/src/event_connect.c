@@ -1,5 +1,6 @@
 #include "sys_inc.h"
 #include "log_trace.h"
+#include "socket.h"
 #include "event_connect.h"
 #include "event_executor.h"
 #include "event_service.h"
@@ -25,6 +26,13 @@ static int _connect_socket_create(char *server_ip, int server_port)
 	if (fd <= 0)
 	{
 		LOG_TRACE_PERROR("socket error!\n");
+		return -1;
+	}
+
+	if (evutil_make_socket_nonblocking(fd) < 0)
+	{
+		LOG_TRACE_NORMAL("evutil_make_socket_nonblocking error ! sock_fd = %d\n", fd);
+		socket_close(fd);
 		return -1;
 	}
 
@@ -70,16 +78,6 @@ static bool _connect_addr_init(connect_t *connect,
 		return false;
 	}
 
-	if (connect->global_ctx)
-	{
-		connect->ssl = SSL_new(connect->global_ctx);
-		if (connect->ssl == NULL)
-		{
-			LOG_TRACE_NORMAL("SSL_new error !\n");
-			return false;
-		}
-	}
-
 	return true;
 }
 
@@ -106,11 +104,6 @@ static void _connect_free(void *arg)
 		if (connect->free_cb_arg)
 		{
 			connect->free_cb_arg(connect->cb_arg);
-		}
-
-		if (connect->ssl)
-		{
-			SSL_free(connect->ssl);
 		}
 
 		free(connect);
@@ -143,7 +136,8 @@ static bool _event_connect_executor(
 	server_addr.sin_addr.s_addr = inet_addr(connect->addr.conn_ip);
 	server_addr.sin_port = htons(connect->addr.conn_port);
 
-	executor = event_executor_new(evbase, worker, connect->conn_fd, connect->ssl, connect, 
+	executor = event_executor_new(evbase, worker, connect->conn_fd, 
+                    connect->global_ctx, false, connect, 
 					free_arg_cb, timer_out, timer_cb, read_cb, write_cb, error_cb);
 	if (executor == NULL)
 	{

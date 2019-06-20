@@ -83,8 +83,9 @@ static bool _talk_error_cb(evexecutor_t executor, event_buf_t *event_buf, short 
 bool global_ctx_init()
 {
 	_global_ctx = event_ssl_client_init(
-			DEFAULT_CA_CRT_FILE, 
+			DEFAULT_CA_FILE, 
 			DEFAULT_CRT_FILE, DEFAULT_KEY_FILE);
+
 	return _global_ctx != NULL;
 }
 

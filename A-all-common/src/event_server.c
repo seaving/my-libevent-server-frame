@@ -221,12 +221,6 @@ void event_server_talk_free(void *arg)
 	server_talk_t *talk = (server_talk_t *) arg;
 	if (talk)
 	{
-		if (talk->ssl)
-		{
-			SSL_free(talk->ssl);
-			talk->ssl = NULL;
-		}
-
 		socket_close(talk->conn_fd);
         event_server_client_count(talk->server, -1);
 

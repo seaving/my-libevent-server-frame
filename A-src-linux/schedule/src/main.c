@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 
 	if (schedule_server_start() == false)
 	{
-		LOG_TRACE_NORMAL("adb_server_start error!\n");
+		LOG_TRACE_NORMAL("schedule_server_start error!\n");
 		return -1;
 	}
 

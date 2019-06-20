@@ -35,9 +35,10 @@
 /*
 	gateway SSL证书
 */
-#define	DEFAULT_CA_CRT_FILE		"/tmp/default.ca"
-#define	DEFAULT_CRT_FILE		"/tmp/default.crt"
-#define	DEFAULT_KEY_FILE		"/tmp/default.key"
+#define SSL_CA_FILE_DIR         "/data/local/tmp"
+#define	DEFAULT_CA_FILE			SSL_CA_FILE_DIR"/ssl-ca/ca.cert"
+#define	DEFAULT_CRT_FILE		SSL_CA_FILE_DIR"/ssl-ca/client.crt"
+#define	DEFAULT_KEY_FILE		SSL_CA_FILE_DIR"/ssl-ca/client.key"
 
 /*
 	程序运行日志保存目录

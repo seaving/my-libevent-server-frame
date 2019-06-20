@@ -76,7 +76,7 @@ static httpRequest_result_t _httpRequest_recv_header(
 		{
 			return E_HTTP_REQUEST_RESULT_RECV_EMPTY;
 		}
-		
+
 		httpRequest->header[httpRequest->header_len] = ch;
 		httpRequest->header_len += len;
 		if (is_http_request_header_buf_full(httpRequest))

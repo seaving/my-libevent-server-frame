@@ -39,7 +39,6 @@ struct __server_talk_user_data__
 typedef struct __server_talk__
 {
 	int conn_fd;
-	SSL *ssl;
 	server_t *server;
 	talk_user_data_t user_data;
 } server_talk_t;
