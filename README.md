@@ -44,5 +44,6 @@ PS: 没错，gateway正式作为android手机的运行程序，ndk编译，需�
 <br>
 2. 增加openssl支持，框架支持openssl加密通信，全部封装好<br>
 <br>
-3. gatewany/build/bin/gateway目录下增加Makefile-linux，直接在编译PC版
+3. gatewany/build/bin/gateway目录下增加Makefile-linux，直接在编译PC版<br>
 <br>
+4. 增加ssl-ca目录（包含证书生成方法.txt）<br>
