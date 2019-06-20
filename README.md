@@ -6,12 +6,12 @@ gateway：客户端demo<br>
 schedule：服务端demo<br>
 <br>
 编译方法：<br>
-gatewany/build 目录下 执行 make clean; make<br>
-schedule/build 目录下 执行 make clean; make<br>
+Z-build/gateway 目录下 执行 make clean; make<br>
+Z-build/schedule 目录下 执行 make clean; make<br>
 <br>
 可执行文件：<br>
-gatewany/build/bin/gateway<br>
-schedule/build/bin/schedule<br>
+Z-build/gateway/bin/gateway<br>
+Z-build/schedule/bin/schedule<br>
 <br>
 具体的详细功能列表如下：<br>
 config.h中宏配置服务器参数，如线程池，服务器worker等；<br>
@@ -38,6 +38,9 @@ Z-build：	编译目录（所有代码的编译makefile都在此目录）<br>
 schedule:服务端demo 代码移到A-src-linux<br>
 gateway：客户端demo 代码移到A-src-android<br>
 PS: 没错，gateway正式作为android手机的运行程序，ndk编译，需要修改android-ndk编译环境的目录，详见makefile<br>
+<br>
+关于android下的libevent和libevent_openssl,openssl,json-c等库移植直接参考我的git库:https://github.com/seaving/android-libs.git<br>
+<br>
 <br>
 2. 增加openssl支持，框架支持openssl加密通信，全部封装好<br>
 <br>
