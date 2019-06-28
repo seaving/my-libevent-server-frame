@@ -59,7 +59,7 @@ PS: 没错，gateway正式作为android手机的运行程序，ndk编译，需�
 <br>
 9. 支持代理模式，单进程单线程worker对于代理的实现非常方便，不用担心互斥的问题，因为都是在同一个evbase中处理<br>
 <br>
-10. 增加服务器配置文件，在config目录下，通过修改config来改变服务器运行状态<br>
+10. 增加服务器配置文件，在config目录下，通过修改config来改变服务器运行状态，各个模块中可以查看config.h来修改配置文件存放路径<br>
 <br>
 11. 增加localsocket通信机制，提供创建localsocket服务器接口和连接localsocket服务器接口<br>
 <br>
