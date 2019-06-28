@@ -129,8 +129,7 @@ static inline bool _cli_phone_frame_parse(
 		event_buf_t *event_buf, cli_phone_t *cli_phone)
 {
 	memset(cli_phone->response, 0, sizeof(cli_phone->response));
-	return protocol_parse(&cli_phone->httpRequest, 
-			cli_phone->response, sizeof(cli_phone->response));
+	return protocol_parse(cli_phone, event_buf);
 }
 
 /*

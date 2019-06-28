@@ -62,8 +62,7 @@ int main(int argc, char **argv)
 	LOG_TRACE_NORMAL("thread pool init (%d) success.\n", 
 					tpool_get_worker_count());
 
-	if (event_service_init(EVENT_WORKER_MAX_SIZE, 
-			EVENT_WORKER_QUEUE_SIZE) == false)
+	if (event_service_init(1, EVENT_WORKER_QUEUE_SIZE) == false)
 	{
 		LOG_TRACE_NORMAL("event_service_init error! exit!!!\n");
 		return -1;
@@ -79,10 +78,21 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	connect_server();
-
 	for ( ; ; )
 	{
+        if (proxy_server_is_ok() == false)
+        {
+            LOG_TRACE_NORMAL("proxy server start ...\n");
+            proxy_server_init();
+            proxy_server_start();
+        }
+
+        if (connect_server_is_ok() == false)
+        {
+            LOG_TRACE_NORMAL("connect server start ...\n");
+            connect_server();
+        }
+
 		_display_status();
 		sleep(1);
 	}
@@ -93,3 +103,4 @@ int main(int argc, char **argv)
 
     return 0;
 }
+

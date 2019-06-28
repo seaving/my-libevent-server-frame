@@ -18,6 +18,13 @@
 #include "http_request.h"
 #include "bm.h"
 #include "user_string.h"
+#include "rlim.h"
+
+/* common 头文件 */
+#include "protocol_route.h"
+#include "protocol_task.h"
+#include "protocol_probe.h"
+#include "protocol_becon.h"
 
 /* 本程序头文件 */
 #include "config.h"
@@ -27,10 +34,11 @@
 #include "cli_phone.h"
 #include "cli_phone_talk.h"
 #include "protocol.h"
-#include "protocol_task.h"
-#include "protocol_probe.h"
-#include "protocol_becon.h"
-
+#include "process.h"
+#include "setaffinity.h"
+#include "schedule_worker.h"
+#include "schedule_master.h"
+#include "schedule_conf.h"
 
 #endif
 

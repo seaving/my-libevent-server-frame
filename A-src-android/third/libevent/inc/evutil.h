@@ -23,8 +23,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef EVENT1_EVUTIL_H_INCLUDED_
-#define EVENT1_EVUTIL_H_INCLUDED_
+#ifndef _EVUTIL_H_
+#define _EVUTIL_H_
 
 /** @file evutil.h
 
@@ -36,4 +36,4 @@
 
 #include <event2/util.h>
 
-#endif /* EVENT1_EVUTIL_H_INCLUDED_ */
+#endif /* _EVUTIL_H_ */

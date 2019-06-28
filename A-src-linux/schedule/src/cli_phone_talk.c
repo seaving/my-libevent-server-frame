@@ -126,31 +126,27 @@ static inline httpRequest_result_t _cli_phone_talk_recv_context(
 /*
 * 函数: _cli_phone_frame_parse
 * 功能: 解析协议
-* 参数: executor			执行者ID
-*		event_buf 		event IO 操作指针
+* 参数: event_buf 		event IO 操作指针
 *		cli_phone		客户端结构体
 * 返回: bool
 *		- false 		失败
 * 说明: 
 */
-static inline bool _cli_phone_frame_parse(evexecutor_t executor, 
-		event_buf_t *event_buf, cli_phone_t *cli_phone)
+static inline bool _cli_phone_frame_parse(event_buf_t *event_buf, cli_phone_t *cli_phone)
 {
 	memset(cli_phone->response, 0, sizeof(cli_phone->response));
-	return protocol_parse(executor, &cli_phone->httpRequest, 
-			cli_phone->response, sizeof(cli_phone->response));
+	return protocol_parse(cli_phone, event_buf);
 }
 
 /*
 * 函数: _cli_phone_step
 * 功能: 流程序列
-* 参数: executor			执行者ID
-*		event_buf 		event IO 操作指针
+* 参数: event_buf 		event IO 操作指针
 *		cli_phone		客户端结构体
 * 返回: cli_phone_res_t
 * 说明: 
 */
-static cli_phone_res_t _cli_phone_step(evexecutor_t executor, event_buf_t *event_buf, cli_phone_t *cli_phone)
+static cli_phone_res_t _cli_phone_step(event_buf_t *event_buf, cli_phone_t *cli_phone)
 {
 	httpRequest_result_t httpRequest_result = E_HTTP_REQUEST_RESULT_SOCKET_ERROR;
 	switch (cli_phone->step)
@@ -207,7 +203,7 @@ static cli_phone_res_t _cli_phone_step(evexecutor_t executor, event_buf_t *event
 		case E_CLI_PHONE_STEP_FRAME_PARSE:
 		{
 			LOG_TRACE_NORMAL("_cli_phone_frame_parse\n");
-			if (_cli_phone_frame_parse(executor, event_buf, cli_phone) == true)
+			if (_cli_phone_frame_parse(event_buf, cli_phone) == true)
 			{
 				cli_phone->step = E_CLI_PHONE_STEP_SEND_SUCCESS;
 				return E_CLI_PHONE_STEP_RESULT_AGAIN;
@@ -268,13 +264,12 @@ static cli_phone_res_t _cli_phone_step(evexecutor_t executor, event_buf_t *event
 /*
 * 函数: cli_phone_talk
 * 功能: 交互入口
-* 参数: executor			执行者ID
-*		event_buf 		event IO 操作指针
+* 参数: event_buf 		event IO 操作指针
 *		cli_phone		客户端结构体
 * 返回: cli_phone_talk_result_t
 * 说明: 
 */
-cli_phone_talk_result_t cli_phone_talk(evexecutor_t executor, event_buf_t *event_buf, cli_phone_t *cli_phone)
+cli_phone_talk_result_t cli_phone_talk(event_buf_t *event_buf, cli_phone_t *cli_phone)
 {
 	cli_phone_res_t ret = E_CLI_PHONE_STEP_RESULT_FINISHED;
 	if (cli_phone == NULL 
@@ -286,7 +281,7 @@ cli_phone_talk_result_t cli_phone_talk(evexecutor_t executor, event_buf_t *event
 
 	for ( ; ; )
 	{
-		ret = _cli_phone_step(executor, event_buf, cli_phone);
+		ret = _cli_phone_step(event_buf, cli_phone);
 		if (ret == E_CLI_PHONE_STEP_RESULT_AGAIN)
 		{
 			//继续轮询执行步骤

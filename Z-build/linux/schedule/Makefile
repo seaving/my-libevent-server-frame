@@ -19,7 +19,8 @@ STRIP = strip
 WALL = -Wall
 #-------------------------------------------------------
 INCLUDE = -I$(CUR_DIR)/src \
-			-I$(CUR_DIR)/../../A-all-common/inc \
+			-I$(CUR_DIR)/../../A-all-common/base/inc \
+			-I$(CUR_DIR)/../../A-all-common/user/inc \
 			-I$(CUR_DIR)/../common/inc \
 			-I/usr/local/include \
 			-I/usr/local/event2 \
@@ -39,13 +40,18 @@ OBJ_DIR = obj
 #-------------------------------------------------------
 #获取当前目录下所有的.c文件
 SOURCE = $(wildcard $(CUR_DIR)/src/*.c) \
-		$(wildcard $(CUR_DIR)/../../A-all-common/src/*.c) \
+		$(wildcard $(CUR_DIR)/../../A-all-common/base/src/*.c) \
+		$(wildcard $(CUR_DIR)/../../A-all-common/user/src/*.c) \
 		$(wildcard $(CUR_DIR)/../common/src/*.c)
 #-------------------------------------------------------
 #得到相应的.o文件,所有的.c文件替换为.o文件
 OBJ = $(patsubst %.c,$(OBJ_DIR)/%.o,$(notdir $(SOURCE)))
 #-------------------------------------------------------
-$(OBJ_DIR)/%.o:$(CUR_DIR)/../../A-all-common/src/%.c
+$(OBJ_DIR)/%.o:$(CUR_DIR)/../../A-all-common/base/src/%.c
+	@echo "CC $<"
+	@$(CC) -ggdb $(WALL) $(INCLUDE) $< -c -o $@
+
+$(OBJ_DIR)/%.o:$(CUR_DIR)/../../A-all-common/user/src/%.c
 	@echo "CC $<"
 	@$(CC) -ggdb $(WALL) $(INCLUDE) $< -c -o $@
 

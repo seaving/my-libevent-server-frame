@@ -10,22 +10,17 @@
 /*
 	线程池中线程数量
 */
-#define THREAD_POOL_MAX_SIZE		32
+#define THREAD_POOL_MAX_SIZE		1
 
 /*
 	EVENT 工作线程队列长度
 */
-#define EVENT_WORKER_QUEUE_SIZE		32
-
-/*
-	EVENT 工作线程数量
-*/
-#define EVENT_WORKER_MAX_SIZE		THREAD_POOL_MAX_SIZE - 10
+#define EVENT_WORKER_QUEUE_SIZE		255
 
 /*
 	schedule服务器地址
 */
-#define SCHEDULE_SERVER_HOST	    "127.0.0.1"
+#define SCHEDULE_SERVER_HOST	    "47.107.134.235"
 
 /*
 	schedule服务器端口号
@@ -39,6 +34,11 @@
 #define	DEFAULT_CA_FILE			SSL_CA_FILE_DIR"/ssl-ca/ca.cert"
 #define	DEFAULT_CRT_FILE		SSL_CA_FILE_DIR"/ssl-ca/client.crt"
 #define	DEFAULT_KEY_FILE		SSL_CA_FILE_DIR"/ssl-ca/client.key"
+
+/*
+	本地服务配置
+*/
+#define SOCKET_LOCAL_NAME       "gw@localserver"
 
 /*
 	程序运行日志保存目录

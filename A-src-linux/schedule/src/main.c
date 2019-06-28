@@ -1,98 +1,124 @@
 #include "includes.h"
 
-static inline void _display_status()
+static void _signal_worker_exit(int signal)
 {
-	static int tpool_working_count = 0;
-	static int tpool_worker_count = 0;
+	LOG_TRACE_NORMAL("WARN: worker exit !!!\n");
 
-	static int evserver_working_count = 0;
-	static int job_wait_count = 0;
-	static int job_handling_count = 0;
-    static int schedule_client_count = 0;
-	
-	if (tpool_working_count != tpool_get_working_count()
-		|| evserver_working_count != event_service_get_working_count()
-		|| job_wait_count != event_service_get_job_wait_count()
-		|| job_handling_count != event_service_get_job_handling_count() 
-		|| schedule_client_count != schedule_server_get_accept_client_cnt()
-		)
+	int i = 0;
+	int error = 0;
+	int status = 0;
+	pid_t pid = -1;
+
+	uintptr_t one = 0;
+
+	char *process = NULL;
+
+	for ( ; ; )
 	{
-		tpool_worker_count = tpool_get_worker_count();
-		tpool_working_count = tpool_get_working_count();
+		pid = waitpid(-1, &status, WNOHANG);
+		if (pid == 0)
+		{
+			return;
+		}
 
-		evserver_working_count = event_service_get_working_count();
-		job_wait_count = event_service_get_job_wait_count();
-		job_handling_count = event_service_get_job_handling_count();
-        schedule_client_count = schedule_server_get_accept_client_cnt();
+		if (pid == -1)
+		{
+			error = errno;
+			if (error == EINTR)
+			{
+				continue;
+			}
 
-		LOG_TRACE_NORMAL("\n");
-		LOG_TRACE_NORMAL("-----------------------------------------------\n");
-		LOG_TRACE_NORMAL("-             version: %s %s\n", MODULE_NAME, VERSION);
-		LOG_TRACE_NORMAL("-    thread pool size: %d\n", THREAD_POOL_MAX_SIZE);
-		LOG_TRACE_NORMAL("-         server port: %d\n", SCHEDULE_SERVER_BIND_PORT);
-		LOG_TRACE_NORMAL("-    listen max count: %d\n", SCHEDULE_CLIENT_ACCEPT_MAX_COUNT);
-		LOG_TRACE_NORMAL("-  tpool worker count: %d\n", tpool_worker_count);
-		LOG_TRACE_NORMAL("- tpool working count: %d\n", tpool_working_count);
-		LOG_TRACE_NORMAL("-      server workers: %d\n", evserver_working_count);
-		LOG_TRACE_NORMAL("- accept client count: %d\n", schedule_client_count);
-		LOG_TRACE_NORMAL("-    all jobs waiting: %d\n", job_wait_count);
-		LOG_TRACE_NORMAL("-   all jobs handling: %d\n", job_handling_count);
-		LOG_TRACE_NORMAL("-----------------------------------------------\n");
-		LOG_TRACE_NORMAL("\n");
+			if (error == ECHILD && one)
+			{
+				return;
+			}
+
+			if (error == ECHILD)
+			{
+				LOG_TRACE_PERROR("waitpid() error !\n");
+				return;
+			}
+
+			LOG_TRACE_PERROR("waitpid() error !\n");
+
+			return;
+		}
+
+		one = 1;
+		process = "unknown process";
+
+		for (i = 0; i < sch_master.worker_num; i ++)
+		{
+			if (sch_master.workers[i].pid == pid)
+			{
+				sch_master.workers[i].status = status;
+				sch_master.workers[i].exited = 1;
+				process = sch_master.workers[i].name;
+				break;
+			}
+		}
+
+		if (WTERMSIG(status))
+		{
+#ifdef __COREDUMP__
+			LOG_TRACE_NORMAL("the worker (pid: %d name:%s) exited on signal %d%s !\n", 
+				pid, process, WTERMSIG(status), WCOREDUMP(status) ? " (core dumped)" : "");
+#else
+			LOG_TRACE_NORMAL("the worker (pid: %d name:%s) exited on signal %d !\n", 
+				pid, process, WTERMSIG(status));
+#endif
+		}
+		else
+		{
+			LOG_TRACE_NORMAL("the worker (pid: %d name:%s) exited with code %d !\n", 
+				pid, process, WEXITSTATUS(status));
+		}
+
+		if (WEXITSTATUS(status) == 2 && sch_master.workers[i].respawn)
+		{
+			LOG_TRACE_NORMAL("the worker (pid: %d name:%s) exited with fatal code %d "
+				"and cannot be respawned!\n", pid, process, WEXITSTATUS(status));
+		}
 	}
+}
+
+static void _signal_interrupt_exit(int signal)
+{
+	LOG_TRACE_NORMAL("WARN: worker exit !!!\n");
+	schedule_server_stop();
+	exit(0);
 }
 
 int main(int argc, char **argv)
 {
 	signal(SIGPIPE, SIG_IGN);
+	signal(SIGCHLD, _signal_worker_exit);
+	signal(SIGINT, _signal_interrupt_exit);
 
 	time_init();
 
-	//log_trace_stdout_init(LOG_OUT_DIR, LOG_STDOUT_FILE);
-	//log_trace_stderr_init(LOG_OUT_DIR, LOG_STDERR_FILE);
+	if (schedule_master_init() == false)
+    {
+        LOG_TRACE_NORMAL("schedule_master_init error !\n");
+        return -1;
+    }
 
-	if (tpool_create(THREAD_POOL_MAX_SIZE) < 0)
+	if (schedule_server_init() == false)
 	{
-		LOG_TRACE_NORMAL("create thread pool failt!\n");
+		LOG_TRACE_NORMAL("schedule_server_init error!\n");
 		return -1;
 	}
 
-	for ( ; tpool_get_worker_count() != THREAD_POOL_MAX_SIZE; )
-	{
-		LOG_TRACE_NORMAL("please wait thread pool init finish (%d created).\n", 
-				tpool_get_worker_count());
-		sleep(1);
-	}
-	LOG_TRACE_NORMAL("thread pool init (%d) success.\n", 
-					tpool_get_worker_count());
-
-	if (event_service_init(EVENT_WORKER_MAX_SIZE, 
-			EVENT_WORKER_QUEUE_SIZE) == false)
-	{
-		LOG_TRACE_NORMAL("event_service_init error! exit!!!\n");
-		return -1;
-	}
+	schedule_master_create_workers();
 
 	LOG_TRACE_NORMAL("\n");
-	LOG_TRACE_NORMAL("------ loop start ------\n");
-
-	event_ssl_lib_init();
-
-	if (schedule_server_start() == false)
-	{
-		LOG_TRACE_NORMAL("schedule_server_start error!\n");
-		return -1;
-	}
+	LOG_TRACE_NORMAL("------ father loop start ------\n");
 
 	for ( ; ; )
 	{
-		_display_status();
 		sleep(1);
 	}
-
-	tpool_destroy();
-	log_trace_stdout_exit();
-	log_trace_stderr_exit();
 
 	return 0;
 }
