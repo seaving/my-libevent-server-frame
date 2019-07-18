@@ -50,13 +50,22 @@ C语言实现封装的服务器框架，单进程+线程池+libevent+ORMSQL
 		关于android下的libevent和libevent_openssl,openssl,json-c等库移植直接参考我的git库:https://github.com/seaving/android-libs.git
 
 	2. 增加openssl支持，框架支持openssl加密通信，全部封装好
+	
 	3. gatewany/build/bin/gateway目录下增加Makefile-linux，直接在编译PC版
+	
 	4. 增加ssl-ca目录（包含证书生成方法.txt）
+	
 	5. 修改目录结构，修改代码结构，把公共代码提到A-all-common目录中
+	
 	6. 修改服务器模型，由线程池worker改为进程worker，单进程单线程模式，通过配置设定cpu核数，程序初始化时自动分配cpu给worker，支持负载均衡
+	
 	8. 支持动态增加进程worker并且自动为worker分配cpu，不需要重启程序
+	
 	9. 支持代理模式，单进程单线程worker对于代理的实现非常方便，不用担心互斥的问题，因为都是在同一个evbase中处理
+	
 	10. 增加服务器配置文件，在config目录下，通过修改config来改变服务器运行状态，各个模块中可以查看config.h来修改配置文件存放路径
+	
 	11. 增加localsocket通信机制，提供创建localsocket服务器接口和连接localsocket服务器接口
+	
 	12. 增加task进程demo，gateway作为本地转发服务器，task与gateway同时运行于本地，gateway建立localsocket服务器，同时与远程服务器建立连接，
 	task连接gateway本地服务，gateway根据task发送过来的数据协议进行数据处理和转发
