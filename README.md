@@ -71,4 +71,6 @@ C语言实现封装的服务器框架，单进程+线程池+libevent+ORMSQL
 	task连接gateway本地服务，gateway根据task发送过来的数据协议进行数据处理和转发
 	
 	13. 解决低版本下libevent库在进行event ssl connect重连失败的问题，拆分event_executor_new，增加event_executor_bufferevent_setcb函数
+	
+	15. 新增接口代码：base64编码解码，内存池mempool
 
