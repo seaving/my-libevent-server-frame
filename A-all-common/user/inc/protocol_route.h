@@ -42,6 +42,7 @@ typedef enum __protocol_route__
 	E_PROTOCOL_ROUTE_SCHEDULE = 0,
 	E_PROTOCOL_ROUTE_GATEWAY,
 	E_PROTOCOL_ROUTE_TASK,
+	E_PROTOCOL_ROUTE_LUA,
 	E_PROTOCOL_ROUTE_UNKOWN
 } protocol_route_t;
 
@@ -54,10 +55,28 @@ typedef struct __protocol_route_info__
 } protocol_route_info_t;
 
 /*
+* 函数: protocol_route_pack_no_header
+* 功能: 打包路由处理协议并且不带头部
+* 参数:	src			来源
+*		dst			目的
+*		cmd			命令
+*		data		数据
+*		buf			缓存
+*		bufsize		长度
+* 返回: bool
+*		- false 		失败
+* 说明: 
+*/
+bool protocol_route_pack_no_header(protocol_route_t src, 
+		protocol_route_t dst, int cmd, char *data, 
+		char *buf, int bufsize);
+
+/*
 * 函数: protocol_route_pack
 * 功能: 打包路由处理协议
 * 参数:	src			来源
 *		dst			目的
+*		cmd			命令
 *		data		数据
 *		buf			缓存
 *		bufsize		长度
@@ -66,7 +85,7 @@ typedef struct __protocol_route_info__
 * 说明: 
 */
 bool protocol_route_pack(protocol_route_t src, 
-		protocol_route_t dst, char *data, 
+		protocol_route_t dst, int cmd, char *data, 
 		char *buf, int bufsize);
 
 /*

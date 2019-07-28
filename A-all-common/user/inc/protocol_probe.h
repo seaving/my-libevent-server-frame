@@ -5,7 +5,7 @@
 
 typedef struct __probe_request__
 {
-	char test[16];
+	char test[32];
 } probe_req_t;
 
 /*

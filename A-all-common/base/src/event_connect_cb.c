@@ -54,6 +54,7 @@ void event_connect_timer_cb(evutil_socket_t fd, short ev, void *arg)
 
 void event_connect_buffered_read_cb(struct bufferevent *bev, void *arg)
 {
+	int client_fd = -1;
 	connect_t *connect = NULL;
 	event_executor_t *executor = (event_executor_t *) arg;
 
@@ -68,13 +69,14 @@ void event_connect_buffered_read_cb(struct bufferevent *bev, void *arg)
 		if (connect 
 			&& connect->read_cb)
 		{
+			client_fd = connect->conn_fd;
 			if (connect->read_cb(&executor->event_buf, 
 					connect->conn_fd, connect->cb_arg) == false)
 			{
 				event_executor_release(executor);
 				event_service_job_handling_count(-1);
 				LOG_TRACE_NORMAL("stoped client event from event base [client_fd: %d].\n", 
-							connect->conn_fd);
+							client_fd);
 				return;
 			}
 		}
@@ -84,6 +86,7 @@ void event_connect_buffered_read_cb(struct bufferevent *bev, void *arg)
 
 void event_connect_buffered_write_cb(struct bufferevent *bev, void *arg)
 {
+	int client_fd = -1;
 	connect_t *connect = NULL;
 	event_executor_t *executor = (event_executor_t *) arg;
 
@@ -97,13 +100,14 @@ void event_connect_buffered_write_cb(struct bufferevent *bev, void *arg)
 		if (connect 
 			&& connect->write_cb)
 		{
+			client_fd = connect->conn_fd;
 			if (connect->write_cb(&executor->event_buf, 
 					connect->conn_fd, connect->cb_arg) == false)
 			{
 				event_executor_release(executor);
 				event_service_job_handling_count(-1);
 				LOG_TRACE_NORMAL("stoped client event from event base [client_fd: %d].\n", 
-							connect->conn_fd);
+							client_fd);
 				return;
 			}
 		}
@@ -128,16 +132,17 @@ void event_connect_buffered_event_cb(struct bufferevent *bev, short what, void *
 			connect->connect_ok = true;
 			if (connect->connect_type == E_CONNECT_TYPE_SOCKET_SERVER)
 			{
-				LOG_TRACE_NORMAL("connect %s%s%s%s:%d success.\n", 
+				LOG_TRACE_NORMAL("connect %s%s%s%s:%d success. conn_fd = %d\n", 
 					connect->sockaddr.domain ? "(" : "", 
 					connect->sockaddr.domain ? connect->sockaddr.domain : "", 
 					connect->sockaddr.domain ? ")" : "", 
-					connect->sockaddr.conn_ip, connect->sockaddr.conn_port);
+					connect->sockaddr.conn_ip, connect->sockaddr.conn_port, 
+					connect->conn_fd);
 			}
 			else if (connect->connect_type == E_CONNECT_TYPE_LOCALSOCKET_SERVER)
 			{
-				LOG_TRACE_NORMAL("connect local server namespace: %d name: %s success.\n", 
-					connect->localsockaddr.namespace, connect->localsockaddr.name);
+				LOG_TRACE_NORMAL("connect local server namespace: %d name: %s success. conn_fd = %d\n", 
+					connect->localsockaddr.namespace, connect->localsockaddr.name, connect->conn_fd);
 			}
 
 			if (connect->success_cb)

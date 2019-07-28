@@ -1,10 +1,11 @@
 #include "includes.h"
 
 /*
-* 函数: protocol_route_pack
-* 功能: 打包路由处理协议
+* 函数: protocol_route_pack_no_header
+* 功能: 打包路由处理协议并且不带头部
 * 参数:	src			来源
 *		dst			目的
+*		cmd			命令
 *		data		数据
 *		buf			缓存
 *		bufsize		长度
@@ -12,13 +13,14 @@
 *		- false 		失败
 * 说明: 
 */
-bool protocol_route_pack(protocol_route_t src, 
-		protocol_route_t dst, char *data, 
+bool protocol_route_pack_no_header(protocol_route_t src, 
+		protocol_route_t dst, int cmd, char *data, 
 		char *buf, int bufsize)
 {
 	const char *context = NULL;
 	struct json_object *json_obj = NULL;
 	struct json_object *data_obj = NULL;
+	struct json_object *context_obj = NULL;
 
 	if (data == NULL 
 		|| buf == NULL 
@@ -29,8 +31,8 @@ bool protocol_route_pack(protocol_route_t src,
 		return false;
 	}
 
-	data_obj = json_tokener_parse(data);
-	if (data_obj == NULL)
+	context_obj = json_tokener_parse(data);
+	if (context_obj == NULL)
 	{
 		LOG_TRACE_NORMAL("json_tokener_parse error !\n");
 		return false;
@@ -42,6 +44,85 @@ bool protocol_route_pack(protocol_route_t src,
 		LOG_TRACE_NORMAL("json_object_new_object error !\n");
 		return false;
 	}
+
+	data_obj = json_object_new_object();
+	if (data_obj == NULL)
+	{
+		LOG_TRACE_NORMAL("json_object_new_object error !\n");
+		json_object_put(json_obj);
+		return false;
+	}
+
+	json_object_object_add(data_obj, "cmd", json_object_new_int(cmd));
+	json_object_object_add(data_obj, "data", context_obj);
+
+	json_object_object_add(json_obj, "src", json_object_new_int(src));
+	json_object_object_add(json_obj, "dst", json_object_new_int(dst));
+	json_object_object_add(json_obj, "data", data_obj);
+
+	context = json_object_to_json_string(json_obj);
+	snprintf(buf, bufsize, "%s", context);
+
+	json_object_put(json_obj);
+
+	return true;
+}
+
+/*
+* 函数: protocol_route_pack
+* 功能: 打包路由处理协议
+* 参数:	src			来源
+*		dst			目的
+*		cmd			命令
+*		data		数据
+*		buf			缓存
+*		bufsize		长度
+* 返回: bool
+*		- false 		失败
+* 说明: 
+*/
+bool protocol_route_pack(protocol_route_t src, 
+		protocol_route_t dst, int cmd, char *data, 
+		char *buf, int bufsize)
+{
+	const char *context = NULL;
+	struct json_object *json_obj = NULL;
+	struct json_object *data_obj = NULL;
+	struct json_object *context_obj = NULL;
+
+	if (data == NULL 
+		|| buf == NULL 
+		|| bufsize <= 0 
+		|| src == E_PROTOCOL_ROUTE_UNKOWN 
+		|| dst == E_PROTOCOL_ROUTE_UNKOWN)
+	{
+		return false;
+	}
+
+	context_obj = json_tokener_parse(data);
+	if (context_obj == NULL)
+	{
+		LOG_TRACE_NORMAL("json_tokener_parse error !\n");
+		return false;
+	}
+
+	json_obj = json_object_new_object();
+	if (json_obj == NULL)
+	{
+		LOG_TRACE_NORMAL("json_object_new_object error !\n");
+		return false;
+	}
+
+	data_obj = json_object_new_object();
+	if (data_obj == NULL)
+	{
+		LOG_TRACE_NORMAL("json_object_new_object error !\n");
+		json_object_put(json_obj);
+		return false;
+	}
+
+	json_object_object_add(data_obj, "cmd", json_object_new_int(cmd));
+	json_object_object_add(data_obj, "data", context_obj);
 
 	json_object_object_add(json_obj, "src", json_object_new_int(src));
 	json_object_object_add(json_obj, "dst", json_object_new_int(dst));

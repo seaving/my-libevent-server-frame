@@ -8,6 +8,25 @@
 
 #define UNUSED __attribute__((unused))
 
+static int _exists(const char *path)
+{
+    return ! access(path, R_OK);
+}
+
+static int _setxattr(const char *name, const char *value)
+{
+    char path[128] = {0};
+    if (! _exists("/sys/fs/selinux"))
+    {
+        return 0;
+    }
+
+    strcpy(path, ANDROID_RESERVED_SOCKET_PREFIX);
+    strcat(path, name);
+
+    return syscall(__NR_setxattr, path, "security.selinux", value, strlen(value), 0);
+}
+
 /* Documented in header file. */
 int socket_make_sockaddr_un(const char *name, int namespaceId, 
         struct sockaddr_un *p_addr, socklen_t *alen)
@@ -160,6 +179,8 @@ int socket_local_server(const char *name, int namespace, int listen_count)
         close(s);
         return -1;
     }
+
+    _setxattr(name, "u:object_r:dnsproxyd_socket:s0");
 
 	return s;
 }

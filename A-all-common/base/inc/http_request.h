@@ -10,17 +10,33 @@ typedef enum __http_request_result__
 	E_HTTP_REQUEST_RESULT_HEADER_BUF_FULL = 0,
 	E_HTTP_REQUEST_RESULT_HEADER_RECV_SUCCESS,
 	E_HTTP_REQUEST_RESULT_CONTEXT_RECV_SUCCESS,
+	E_HTTP_REQUEST_RESULT_CHUNKED_SIZE_RECV_SUCCESS,
+	E_HTTP_REQUEST_RESULT_CHUNKED_ENDFLAG_RECV_SUCCESS,
 	E_HTTP_REQUEST_RESULT_RECV_EMPTY,
 	E_HTTP_REQUEST_RESULT_SOCKET_ERROR
 } httpRequest_result_t;
 
+typedef enum __context_trans_type__
+{
+	E_TRANS_TYPE_STATIC = 0,
+	E_TRANS_TYPE_CHUNKED
+} trans_type_t;
+
 typedef struct __http_request__
 {
+	char method[16];
+	char url[255];
+	char host[255];
+	char post_buf[2048];
+	int post_datalen;
 	char header[8192];
 	int header_len;
 	char *context_buf;
 	int context_len;
+	trans_type_t trans_type;
 	int data_len;
+	char tmp_buf[128];
+	int tmp_data_len;
 } httpRequest_t;
 
 bool httpRequest_find_field(httpRequest_t *httpRequest, 

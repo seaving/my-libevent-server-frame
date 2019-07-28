@@ -32,15 +32,19 @@ event_executor_t *event_executor_new(
 	struct event_base *evbase, 
 	event_worker_t *worker, 
 	int fd, 
-    SSL_CTX *ctx, 
+	SSL_CTX *ctx, 
     bool is_sslser, 
 	void *arg, 
-	void (*free_arg_cb)(void *), 
+	void (*free_arg_cb)(void *));
+
+bool event_executor_bufferevent_setcb(
+	event_executor_t *executor, 
 	unsigned int timer_out, 
 	event_cb_fn timer_cb, 
 	bufferevent_data_cb read_cb, 
-	bufferevent_data_cb write_cb,
+	bufferevent_data_cb write_cb, 
     bufferevent_event_cb error_cb);
+
 
 bool event_send_data(event_buf_t *event_buf, char *user_data, int data_len);
 int event_recv_data(event_buf_t *event_buf, char *user_buf, int buf_size);

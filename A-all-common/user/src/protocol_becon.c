@@ -40,7 +40,6 @@ bool protocol_becon_pack_response(becon_resp_t *resp, char *req_buf, int bufsize
 
 	json_object_object_add(data_obj, "test", json_object_new_string(resp->test));
 
-	json_object_object_add(json_obj, "cmd", json_object_new_int(E_PROTOCOL_CMD_BECON));
 	json_object_object_add(json_obj, "data", data_obj);
 
 	context = json_object_to_json_string(json_obj);
@@ -74,7 +73,8 @@ bool protocol_becon_send_response(
 		return false;
 	}
 
-	if (protocol_route_pack(src, dst, data, pack, sizeof(pack)) == false)
+	if (protocol_route_pack(src, dst, E_PROTOCOL_CMD_BECON, 
+			data, pack, sizeof(pack)) == false)
 	{
 		LOG_TRACE_NORMAL("protocol_route_pack error !\n");
 		return false;

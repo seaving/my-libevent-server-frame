@@ -40,7 +40,6 @@ bool protocol_probe_pack_request(probe_req_t *req, char *req_buf, int bufsize)
 
 	json_object_object_add(data_obj, "test", json_object_new_string(req->test));
 
-	json_object_object_add(json_obj, "cmd", json_object_new_int(E_PROTOCOL_CMD_PROBE));
 	json_object_object_add(json_obj, "data", data_obj);
 
 	context = json_object_to_json_string(json_obj);
@@ -74,7 +73,8 @@ bool protocol_probe_send_request(
 		return false;
 	}
 
-	if (protocol_route_pack(src, dst, data, pack, sizeof(pack)) == false)
+	if (protocol_route_pack(src, dst, E_PROTOCOL_CMD_PROBE, 
+			data, pack, sizeof(pack)) == false)
 	{
 		LOG_TRACE_NORMAL("protocol_route_pack error !\n");
 		return false;

@@ -7,7 +7,7 @@
 #include "event_connect_cb.h"
 #include "event_dns.h"
 #include "socket_local.h"
-
+#if 0
 static int _connect_socket_create(char *server_ip, int server_port)
 {
 	int fd = -1;
@@ -39,6 +39,7 @@ static int _connect_socket_create(char *server_ip, int server_port)
 
 	return fd;
 }
+#endif
 
 static bool _connect_addr_init(connect_t *connect, 
 		char *domain, char *server_ip, int server_port)
@@ -73,12 +74,15 @@ static bool _connect_addr_init(connect_t *connect,
 
 	connect->sockaddr.conn_port = server_port;
 
+	connect->conn_fd = -1;
+
+#if 0	//在使用openssl时，提前创建socket会造成重连无法连接上，原因未知
 	connect->conn_fd = _connect_socket_create(connect->sockaddr.conn_ip, connect->sockaddr.conn_port);
 	if (connect->conn_fd <= 0)
 	{
 		return false;
 	}
-
+#endif
 	return true;
 }
 
@@ -106,7 +110,7 @@ static bool _connect_local_socket_addr_init(connect_t *connect)
 	return true;
 }
 
-static void _connect_free(void *arg)
+static void _event_connect_free(void *arg)
 {
 	connect_t *connect = (connect_t *) arg;
 	if (connect)
@@ -170,17 +174,22 @@ static bool _event_connect_executor(
 
 	executor = event_executor_new(evbase, worker, connect->conn_fd, 
                     connect->global_ctx, false, connect, 
-					free_arg_cb, timer_out, timer_cb, read_cb, write_cb, error_cb);
-	if (executor == NULL)
+					free_arg_cb);
+	if (executor == NULL 
+		|| executor->event_buf.buf_ev == NULL)
 	{
+		LOG_TRACE_ERROR("event_executor_new error !\n");
 		return false;
 	}
 
-	LOG_TRACE_NORMAL("connect server: %s:%d\n", 
-		connect->sockaddr.conn_ip, connect->sockaddr.conn_port);
 	bufferevent_socket_connect(executor->event_buf.buf_ev, 
 		(struct sockaddr *) &server_addr, sizeof(struct sockaddr_in));
-	return true;
+	connect->conn_fd = bufferevent_getfd(executor->event_buf.buf_ev);
+	LOG_TRACE_NORMAL("connect server: %s:%d, conn_fd = %d\n", 
+			connect->sockaddr.conn_ip, connect->sockaddr.conn_port, connect->conn_fd);
+
+	return event_executor_bufferevent_setcb(executor, 
+				timer_out, timer_cb, read_cb, write_cb, error_cb);
 }
 
 static bool _event_connect_local_socket_executor(
@@ -217,9 +226,11 @@ static bool _event_connect_local_socket_executor(
 
 	executor = event_executor_new(evbase, worker, connect->conn_fd, 
 					connect->global_ctx, false, connect, 
-					free_arg_cb, timer_out, timer_cb, read_cb, write_cb, error_cb);
-	if (executor == NULL)
+					free_arg_cb);
+	if (executor == NULL 
+		|| executor->event_buf.buf_ev == NULL)
 	{
+		LOG_TRACE_ERROR("event_executor_new error !\n");
 		return false;
 	}
 
@@ -228,7 +239,9 @@ static bool _event_connect_local_socket_executor(
 			connect->localsockaddr.name);
 	bufferevent_socket_connect(executor->event_buf.buf_ev, 
 		(struct sockaddr *) &server_addr, alen);
-	return true;
+
+	return event_executor_bufferevent_setcb(executor, 
+			timer_out, timer_cb, read_cb, write_cb, error_cb);
 }
 
 static void _dns_finished_cb(char *domain, char *ip, void *arg)
@@ -242,16 +255,16 @@ static void _dns_finished_cb(char *domain, char *ip, void *arg)
 	if (_connect_addr_init(connect, domain, ip, 
 			connect->sockaddr.conn_port) == false)
 	{
-		_connect_free(connect);
+		_event_connect_free(connect);
 		return;
 	}
 
-	if (event_service_distribute_job(connect, _connect_free, connect->timer_out, 
+	if (event_service_distribute_job(connect, _event_connect_free, connect->timer_out, 
 			_event_connect_executor, event_connect_timer_cb, 
 			event_connect_buffered_read_cb, event_connect_buffered_write_cb, 
 			event_connect_buffered_event_cb) == false)
 	{
-		_connect_free(connect);
+		_event_connect_free(connect);
 	}
 }
 
@@ -291,7 +304,7 @@ bool event_connect_distribute_job(
 	if (event_dns_distribute_job(server_host, 
 			_dns_finished_cb, connect) == false)
 	{
-		_connect_free(connect);
+		_event_connect_free(connect);
 		return false;
 	}
 
@@ -342,16 +355,16 @@ bool event_connect_local_socket_distribute_job(
 
 	if (_connect_local_socket_addr_init(connect) == false)
 	{
-		_connect_free(connect);
+		_event_connect_free(connect);
 		return false;
 	}
 
-	if (event_service_distribute_job(connect, _connect_free, connect->timer_out, 
+	if (event_service_distribute_job(connect, _event_connect_free, connect->timer_out, 
 			_event_connect_local_socket_executor, event_connect_timer_cb, 
 			event_connect_buffered_read_cb, event_connect_buffered_write_cb, 
 			event_connect_buffered_event_cb) == false)
 	{
-		_connect_free(connect);
+		_event_connect_free(connect);
 	}
 
 	return true;

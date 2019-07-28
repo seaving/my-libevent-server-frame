@@ -23,8 +23,6 @@ static inline bool _httpRequest_context_buf_init(httpRequest_t *httpRequest)
 	if (httpRequest 
 		&& httpRequest->context_buf == NULL)
 	{
-		httpRequest->context_len = 
-				httpRequest_get_content_length(httpRequest);
 		//LOG_TRACE_NORMAL("httpRequest->context_len = %d\n", 
 			//	httpRequest->context_len);
 		if (httpRequest->context_len > 0)
@@ -347,6 +345,21 @@ bool httpRequest_find_field(httpRequest_t *httpRequest,
 	return false;
 }
 
+trans_type_t httpRequest_get_trans_type(httpRequest_t *httpRequest)
+{
+	char value_buf[64] = {0};
+	if (httpRequest_find_field(httpRequest, "Transfer-Encoding", 
+				value_buf, sizeof(value_buf)) == true)
+	{
+		if (strcasecmp(value_buf, "chunked") == 0)
+		{
+			return E_TRANS_TYPE_CHUNKED;
+		}
+	}
+
+	return E_TRANS_TYPE_STATIC;
+}
+
 int httpRequest_get_content_length(httpRequest_t *httpRequest)
 {
 	int i;
@@ -382,13 +395,36 @@ int httpRequest_get_content_length(httpRequest_t *httpRequest)
 	return 0;
 }
 
+void httpRequest_parse_header(httpRequest_t *httpRequest)
+{
+	httpRequest->trans_type = httpRequest_get_trans_type(httpRequest);
+	if (httpRequest->trans_type == E_TRANS_TYPE_STATIC)
+	{
+		httpRequest->context_len = 
+			httpRequest_get_content_length(httpRequest);
+	}
+
+	LOG_TRACE_NORMAL("http response trans type: %s\n", 
+		httpRequest->trans_type == E_TRANS_TYPE_STATIC ? "static" : 
+			httpRequest->trans_type == E_TRANS_TYPE_CHUNKED ? "chunked" : "unkown");
+}
+
 httpRequest_result_t httpRequest_recv_header(
 		event_buf_t *event_buf, httpRequest_t *httpRequest)
 {
-	return _httpRequest_recv_header(event_buf, httpRequest);
+	httpRequest_result_t ret;
+	httpRequest->context_len = 0;
+	httpRequest->data_len = 0;
+	httpRequest->tmp_data_len = 0;
+	ret = _httpRequest_recv_header(event_buf, httpRequest);
+	if (ret == E_HTTP_REQUEST_RESULT_HEADER_RECV_SUCCESS)
+	{
+		httpRequest_parse_header(httpRequest);
+	}
+	return ret;
 }
 
-httpRequest_result_t httpRequest_recv_context(
+static inline httpRequest_result_t httpRequest_recv_static_context(
 		event_buf_t *event_buf, httpRequest_t *httpRequest)
 {
 	if (_httpRequest_context_buf_init(httpRequest))
@@ -399,6 +435,204 @@ httpRequest_result_t httpRequest_recv_context(
 	if (httpRequest && httpRequest->context_len <= 0)
 	{
 		return E_HTTP_REQUEST_RESULT_CONTEXT_RECV_SUCCESS;
+	}
+	
+	return E_HTTP_REQUEST_RESULT_SOCKET_ERROR;
+}
+
+static inline httpRequest_result_t _httpRequest_recv_chunked_size(
+		event_buf_t *event_buf, httpRequest_t *httpRequest)
+{
+	char tmp[15] = {0};
+	int i = 0;
+	int read_len = 0;
+
+	//如果上次的chunked还没收完，则继续收完上次数据
+	if (httpRequest->context_len > 0)
+	{
+		return E_HTTP_REQUEST_RESULT_CHUNKED_SIZE_RECV_SUCCESS;
+	}
+
+	for ( ; ; )
+	{
+		read_len = event_recv_data(event_buf, 
+				httpRequest->tmp_buf + httpRequest->tmp_data_len, 1);
+		if (read_len < 0)
+		{
+			return E_HTTP_REQUEST_RESULT_SOCKET_ERROR;
+		}
+		
+		if (read_len == 0)
+		{
+			return E_HTTP_REQUEST_RESULT_RECV_EMPTY;
+		}
+
+		httpRequest->tmp_data_len += read_len;
+		httpRequest->tmp_buf[httpRequest->tmp_data_len] = '\0';
+
+		//LOG_TRACE_NORMAL("&&&&& %s\n", httpRequest->tmp_buf);
+
+		if (httpRequest->tmp_data_len > 15)
+		{
+			LOG_TRACE_ERROR("chunked protocol parse error !\n");
+			memset(tmp, 0, sizeof(tmp));
+			return E_HTTP_REQUEST_RESULT_SOCKET_ERROR;
+		}
+
+		if (httpRequest->tmp_data_len > 2 
+			&& httpRequest->tmp_data_len < 15 
+			&& httpRequest->tmp_buf[httpRequest->tmp_data_len - 2] == '\r' 
+			&& httpRequest->tmp_buf[httpRequest->tmp_data_len - 1] == '\n')
+		{
+			for (i = 0; i < httpRequest->tmp_data_len; i ++)
+			{
+				if (httpRequest->tmp_buf[i] == '\r'
+				|| httpRequest->tmp_buf[i] == '\n'
+				|| httpRequest->tmp_buf[i] == '\0')
+				{
+					break;
+				}
+
+				if (('0' <= httpRequest->tmp_buf[i] 
+						&& httpRequest->tmp_buf[i] <= '9')
+					|| ('a' <= httpRequest->tmp_buf[i] 
+						&& httpRequest->tmp_buf[i] <= 'f')
+					|| ('A' <= httpRequest->tmp_buf[i] 
+						&& httpRequest->tmp_buf[i] <= 'F'))
+				{
+					tmp[i] = httpRequest->tmp_buf[i];
+				}
+				else
+				{
+					LOG_TRACE_ERROR("chunked protocol parse error !\n");
+					return E_HTTP_REQUEST_RESULT_SOCKET_ERROR;
+				}
+			}
+
+			httpRequest->context_len = strtol(tmp, NULL, 16);
+			LOG_TRACE_NORMAL("chunked size = %d\n", httpRequest->context_len);
+
+			httpRequest->tmp_data_len = 0;
+			httpRequest->tmp_buf[0] = '\0';
+
+			if (httpRequest->context_len > 0)
+			{
+				httpRequest->context_buf = realloc(httpRequest->context_buf, 
+								httpRequest->context_len + 1);
+				if (httpRequest->context_buf == NULL)
+				{
+					LOG_TRACE_PERROR("relloc error !\n");
+					return E_HTTP_REQUEST_RESULT_SOCKET_ERROR;
+				}
+			}
+
+			return E_HTTP_REQUEST_RESULT_CHUNKED_SIZE_RECV_SUCCESS;
+		}
+	}
+
+	return E_HTTP_REQUEST_RESULT_SOCKET_ERROR;
+}
+
+static inline httpRequest_result_t _httpRequest_recv_chunked_endflag(
+		event_buf_t *event_buf, httpRequest_t *httpRequest)
+{
+	int read_len = 0;
+
+	for ( ; ; )
+	{
+		read_len = event_recv_data(event_buf, 
+				httpRequest->tmp_buf + httpRequest->tmp_data_len, 1);
+		if (read_len < 0)
+		{
+			return E_HTTP_REQUEST_RESULT_SOCKET_ERROR;
+		}
+		
+		if (read_len == 0)
+		{
+			return E_HTTP_REQUEST_RESULT_RECV_EMPTY;
+		}
+
+		httpRequest->tmp_data_len += read_len;
+		httpRequest->tmp_buf[httpRequest->tmp_data_len] = '\0';
+
+		//LOG_TRACE_NORMAL("&&&&& %s\n", httpRequest->tmp_buf);
+
+		if (httpRequest->tmp_data_len >= 1 
+			&& httpRequest->tmp_buf[0] != '\r')
+		{
+			LOG_TRACE_ERROR("chunked protocol parse error !\n");
+			return E_HTTP_REQUEST_RESULT_SOCKET_ERROR;
+		}
+
+		if (httpRequest->tmp_data_len >= 2 
+			&& httpRequest->tmp_buf[1] != '\n')
+		{
+			LOG_TRACE_ERROR("chunked protocol parse error !\n");
+			return E_HTTP_REQUEST_RESULT_SOCKET_ERROR;
+		}
+
+		return E_HTTP_REQUEST_RESULT_CHUNKED_ENDFLAG_RECV_SUCCESS;
+	}
+
+	return E_HTTP_REQUEST_RESULT_SOCKET_ERROR;
+}
+
+static inline httpRequest_result_t httpRequest_recv_chunked_context(
+		event_buf_t *event_buf, httpRequest_t *httpRequest)
+{
+	httpRequest_result_t ret = E_HTTP_REQUEST_RESULT_SOCKET_ERROR;
+	for ( ; ; )
+	{
+		//读取chunked头
+		ret = _httpRequest_recv_chunked_size(event_buf, httpRequest);
+		if (ret == E_HTTP_REQUEST_RESULT_CHUNKED_SIZE_RECV_SUCCESS)
+		{
+			if (httpRequest->context_len <= 0)
+			{
+				//读取chunked结束符
+				ret = _httpRequest_recv_chunked_endflag(event_buf, httpRequest);
+				if (ret == E_HTTP_REQUEST_RESULT_CHUNKED_ENDFLAG_RECV_SUCCESS)
+				{
+					httpRequest->context_len = 0;
+				}
+				return E_HTTP_REQUEST_RESULT_CONTEXT_RECV_SUCCESS;
+			}
+
+			//读取chunked正文
+			ret = _httpRequest_recv_context(event_buf, httpRequest);
+			if (ret == E_HTTP_REQUEST_RESULT_CONTEXT_RECV_SUCCESS)
+			{
+				//读取chunked结束符
+				ret = _httpRequest_recv_chunked_endflag(event_buf, httpRequest);
+				if (ret == E_HTTP_REQUEST_RESULT_CHUNKED_ENDFLAG_RECV_SUCCESS)
+				{
+					httpRequest->context_len = 0;
+				}
+			}
+		}
+		else
+		{
+			return ret;
+		}
+	}
+
+	return ret;
+}
+
+httpRequest_result_t httpRequest_recv_context(
+		event_buf_t *event_buf, httpRequest_t *httpRequest)
+{
+	if (httpRequest->trans_type == E_TRANS_TYPE_STATIC)
+	{
+		return httpRequest_recv_static_context(event_buf, httpRequest);
+	}
+	else if (httpRequest->trans_type == E_TRANS_TYPE_CHUNKED)
+	{
+		return httpRequest_recv_chunked_context(event_buf, httpRequest);
+	}
+	else
+	{
+		LOG_TRACE_ERROR("unkown trans type !\n");
 	}
 
 	return E_HTTP_REQUEST_RESULT_SOCKET_ERROR;

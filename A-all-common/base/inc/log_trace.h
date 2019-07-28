@@ -10,13 +10,13 @@
 #define LOG_DEBUG_TRACE_ENABLE
 
 #define DBG_PRINT	printf
-#define DBG_LEVEL	""
 
 #if defined(LOG_DEBUG_TRACE_ENABLE)
 #define LOG_DEBUG_TRACE(level, format, args...) \
 	do { \
-		DBG_PRINT(DBG_LEVEL "%s %u %u %s [%s]:%d " format, \
+		DBG_PRINT("%s %u %u %s [%s]:%d " format, \
 			MODULE_NAME, SYSTEM_SEC, getpid(), level, __FUNCTION__, __LINE__, ## args); \
+		fflush(stdout); \
 	} while (0)
 #else
 #define LOG_DEBUG_TRACE(format, args...)
@@ -25,8 +25,9 @@
 #if defined(LOG_DEBUG_TRACE_ENABLE)
 #define LOG_DEBUG_TRACE_PERROR(format, args...) \
 	do { \
-		DBG_PRINT(DBG_LEVEL "%s %u %u ERROR [%s]:%d [error info(errno=%d): %s] -> " format, \
+		DBG_PRINT("%s %u %u ERROR [%s]:%d [error info(errno=%d): %s] -> " format, \
 			MODULE_NAME, SYSTEM_SEC, getpid(), __FUNCTION__, __LINE__, errno, strerror(errno), ## args); \
+		fflush(stdout); \
 	} while (0)
 #else
 #define LOG_DEBUG_TRACE_PERROR(format, args...)

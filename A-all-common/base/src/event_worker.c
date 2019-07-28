@@ -66,8 +66,6 @@ static void _event_worker_add_event(event_worker_t *worker)
 
 	for (i = 0; worker; i ++)
 	{
-		DEBUG_POINT;
-
 		recv(worker->read_fd, buf, 1, 0);
 
 		item = NULL;
@@ -76,11 +74,8 @@ static void _event_worker_add_event(event_worker_t *worker)
 		item = queue_pop(worker->queue);
 		if (item == NULL)
 		{
-			DEBUG_POINT;
 			return;
 		}
-
-		DEBUG_POINT;
 
 		//LOG_TRACE_NORMAL("queue pop item to process --> \n");
 
@@ -88,9 +83,7 @@ static void _event_worker_add_event(event_worker_t *worker)
 		if (job == NULL)
 		{
 			//LOG_TRACE_NORMAL("queue_pop error!\n");
-			DEBUG_POINT;
 			item_free(worker->queue, item);
-			DEBUG_POINT;
 			return;
 		}
 		job->processing = false;
@@ -108,7 +101,6 @@ static void _event_worker_add_event(event_worker_t *worker)
 
 		if (job->arg && job->executor_cb)
 		{
-			DEBUG_POINT;
 			ret = job->executor_cb(worker->evbase, worker, 
 						job->arg, job->free_arg_cb, job->timer_out, job->timer_cb, 
 						job->read_cb, job->write_cb, 
@@ -122,21 +114,17 @@ static void _event_worker_add_event(event_worker_t *worker)
 				job->processing = true;
 				event_service_job_handling_count(1);
 			}
-			DEBUG_POINT;
 		}
 		else
 		{
-			DEBUG_POINT;
 			if (job->free_arg_cb)
 			{
 				job->free_arg_cb(job->arg);
 			}
-			DEBUG_POINT;
 		}
-		DEBUG_POINT;
+
 		job->free_arg_cb = NULL;
 		item_free(worker->queue, item);
-		DEBUG_POINT;
 	}
 }
 

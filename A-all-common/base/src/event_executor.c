@@ -52,14 +52,8 @@ event_executor_t *event_executor_new(
 	SSL_CTX *ctx, 
     bool is_sslser, 
 	void *arg, 
-	void (*free_arg_cb)(void *), 
-	unsigned int timer_out, 
-	event_cb_fn timer_cb, 
-	bufferevent_data_cb read_cb, 
-	bufferevent_data_cb write_cb, 
-    bufferevent_event_cb error_cb)
+	void (*free_arg_cb)(void *))
 {
-	struct timeval tv;
 	event_executor_t *executor = NULL;
 
 	if (arg && evbase)
@@ -89,33 +83,6 @@ event_executor_t *event_executor_new(
 	        _event_executor_free(executor);
 	        return NULL;
     	}
-
-		if (timer_out > 0 
-			|| timer_cb)
-		{
-			executor->timeout = timer_out;
-			executor->time_count = SYSTEM_SEC;
-
-			if (timer_cb 
-				&& event_assign(&executor->event_timer, 
-					evbase, executor->fd, 
-					EV_PERSIST, 
-					timer_cb, executor) < 0)
-			{
-				LOG_TRACE_NORMAL("event_assign error!\n");
-				_event_executor_free(executor);
-				return NULL;
-			}
-
-			evutil_timerclear(&tv);
-			tv.tv_sec = 1;
-			if (event_add(&executor->event_timer, &tv) < 0)
-			{
-		        LOG_TRACE_NORMAL("event_add failed!\n");
-		        _event_executor_free(executor);
-		        return NULL;
-			}
-		}
 
 		if (ctx == NULL)
 		{
@@ -149,22 +116,76 @@ event_executor_t *event_executor_new(
 			}
 		}
 
-		bufferevent_setcb(executor->event_buf.buf_ev, 
-					read_cb, 
-					write_cb,
-					error_cb, executor);
-		
-		if (bufferevent_enable(executor->event_buf.buf_ev, EV_READ /* | EV_WRITE*/) < 0)
-		{
-			LOG_TRACE_NORMAL("enable bufferevent failed!\n");
-			_event_executor_free(executor);
-			return NULL;
-		}
-
 		executor->evbase = evbase;
 	}
 
 	return executor;
+}
+
+bool event_executor_bufferevent_setcb(
+	event_executor_t *executor, 
+	unsigned int timer_out, 
+	event_cb_fn timer_cb, 
+	bufferevent_data_cb read_cb, 
+	bufferevent_data_cb write_cb, 
+    bufferevent_event_cb error_cb)
+{
+	struct timeval tv;
+	if (executor == NULL 
+		|| executor->evbase == NULL 
+		|| executor->event_buf.buf_ev == NULL)
+	{
+		return false;
+	}
+
+	executor->fd = bufferevent_getfd(executor->event_buf.buf_ev);
+	if (executor->fd <= 0)
+	{
+		LOG_TRACE_NORMAL("bufferevent_getfd = %d !\n", executor->fd);
+		_event_executor_free(executor);
+		return false;
+	}
+
+	if (timer_out > 0 
+		|| timer_cb)
+	{
+		executor->timeout = timer_out;
+		executor->time_count = SYSTEM_SEC;
+
+		if (timer_cb 
+			&& event_assign(&executor->event_timer, 
+				executor->evbase, executor->fd, 
+				EV_PERSIST, 
+				timer_cb, executor) < 0)
+		{
+			LOG_TRACE_NORMAL("event_assign error!\n");
+			_event_executor_free(executor);
+			return NULL;
+		}
+
+		evutil_timerclear(&tv);
+		tv.tv_sec = 1;
+		if (event_add(&executor->event_timer, &tv) < 0)
+		{
+	        LOG_TRACE_NORMAL("event_add failed!\n");
+	        _event_executor_free(executor);
+	        return NULL;
+		}
+	}
+
+	bufferevent_setcb(executor->event_buf.buf_ev, 
+						read_cb, 
+						write_cb,
+						error_cb, executor);
+
+	if (bufferevent_enable(executor->event_buf.buf_ev, EV_READ /* | EV_WRITE*/) < 0)
+	{
+		LOG_TRACE_NORMAL("enable bufferevent failed!\n");
+		_event_executor_free(executor);
+		return false;
+	}
+
+	return true;
 }
 
 bool event_send_data(event_buf_t *event_buf, 

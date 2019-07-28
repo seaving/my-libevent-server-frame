@@ -174,14 +174,14 @@ static bool _event_server_executor(
 
 	executor = event_executor_new(evbase, worker, talk->conn_fd, 
                     talk->server->ctx, true, talk, 
-					free_arg_cb, io_timeout, timer_cb, read_cb, 
-					write_cb, error_cb);
+					free_arg_cb);
 	if (executor == NULL)
 	{
 		return false;
 	}
 
-	return true;
+	return event_executor_bufferevent_setcb(executor, 
+			io_timeout, timer_cb, read_cb, write_cb, error_cb);
 }
 
 void event_server_accept_cb(evutil_socket_t listen_fd, short ev, void *arg)
