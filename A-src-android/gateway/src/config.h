@@ -20,7 +20,7 @@
 /*
 	schedule服务器地址
 */
-#define SCHEDULE_SERVER_HOST	    "47.107.134.235"
+#define SCHEDULE_SERVER_HOST	    "127.0.0.1"
 
 /*
 	schedule服务器端口号
@@ -30,7 +30,7 @@
 /*
 	gateway SSL证书
 */
-#define SSL_CA_FILE_DIR         "/data/local/tmp"
+#define SSL_CA_FILE_DIR         "/tmp"
 #define	DEFAULT_CA_FILE			SSL_CA_FILE_DIR"/ssl-ca/ca.cert"
 #define	DEFAULT_CRT_FILE		SSL_CA_FILE_DIR"/ssl-ca/client.crt"
 #define	DEFAULT_KEY_FILE		SSL_CA_FILE_DIR"/ssl-ca/client.key"

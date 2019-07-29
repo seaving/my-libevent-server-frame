@@ -38,7 +38,6 @@
 #include "connect_cb.h"
 #include "dev_state.h"
 #include "cli_local_talk.h"
-#include "obf.h"
 
 #endif
 

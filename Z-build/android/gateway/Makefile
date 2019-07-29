@@ -8,49 +8,33 @@ CUR_DIR = ../../../A-src-android/gateway
 #-------------------------------------------------------
 TARGET = bin/gateway
 #-------------------------------------------------------
-ANDROID_API = 12
-ARCH_DIR = arch-arm
-TOOLCHAINS = toolchains/arm-linux-androideabi-4.9
-HOST = arm-linux-androideabi-
 #-------------------------------------------------------
-NDKROOT = /home/caixiwen/android-ndk-r11
-PLATFORM = $(NDKROOT)/platforms/android-$(ANDROID_API)/$(ARCH_DIR)
 #-------------------------------------------------------
-CROSS_COMPILE = $(NDKROOT)/$(TOOLCHAINS)/prebuilt/linux-x86_64/bin/$(HOST)
 #-------------------------------------------------------
-CC = $(CROSS_COMPILE)gcc
-CXX = $(CROSS_COMPILE)g++
-AR = $(CROSS_COMPILE)ar
-LD = $(CROSS_COMPILE)ld
-STRIP = $(CROSS_COMPILE)strip
+CC = gcc
+CXX = g++
+AR = ar
+LD = ld
+STRIP = strip
 WALL = -Wall
-CFLAGS = -D__ANDROID_API__=$(ANDROID_API) -O2 -fPIC -DANDROID -DHAVE_PTHREAD -mfpu=neon -mfloat-abi=softfp -fuse-ld=bfd -pie -fPIE -D_STLP_USE_NEWALLOC -lm \
-		--sysroot=$(PLATFORM) \
-		-D__ANDROID_PLATFORM__ \
 #-------------------------------------------------------
-INCLUDE = -I$(PLATFORM)/usr/include \
-			-I$(CUR_DIR)/src \
+INCLUDE = -I$(CUR_DIR)/src \
 			-I$(CUR_DIR)/../../A-all-common/base/inc \
 			-I$(CUR_DIR)/../../A-all-common/user/inc \
 			-I$(CUR_DIR)/../common/inc \
-			-I$(CUR_DIR)/../third/libevent/inc \
-			-I$(CUR_DIR)/../third/libevent/inc/event2 \
-			-I$(CUR_DIR)/../third/json-c/inc \
-			-I$(CUR_DIR)/../third/zlib/inc \
-			-I$(CUR_DIR)/../third/openssl/include \
-			-I$(CUR_DIR)/../third/openssl/include/openssl \
-
+			-I/usr/local/include \
+			-I/usr/local/event2 \
+			-I/usr/local/include/json-c \
+			-I/usr/local/include/openssl \
 #-------------------------------------------------------
-STATIC_LIB = $(CUR_DIR)/../third/libevent/libevent.a \
-				$(CUR_DIR)/../third/libevent/libevent_openssl.a \
-				$(CUR_DIR)/../third/json-c/libjson-c.a \
-				$(CUR_DIR)/../third/zlib/libz.a \
-				$(CUR_DIR)/../third/openssl/armeabi-v7a/lib/libssl.a \
-				$(CUR_DIR)/../third/openssl/armeabi-v7a/lib/libcrypto.a \
-
+STATIC_LIB = /usr/local/lib/libevent.a \
+				/usr/local/lib/libevent_openssl.a \
+				/usr/local/lib/libjson-c.a \
+				/usr/local/lib/libssl.a \
+				/usr/local/lib/libcrypto.a \
 #-------------------------------------------------------
-SHARE_LIB_PATH = -L$(NDKROOT)/sources/cxx-stl/stlport/libs/armeabi/ -L$(PLATFORM)/usr/lib
-SHARE_LIB = 
+SHARE_LIB_PATH = 
+SHARE_LIB = -ldl -lz -lpthread
 #-------------------------------------------------------
 OBJ_DIR = obj
 #-------------------------------------------------------
@@ -65,24 +49,24 @@ OBJ = $(patsubst %.c,$(OBJ_DIR)/%.o,$(notdir $(SOURCE)))
 #-------------------------------------------------------
 $(OBJ_DIR)/%.o:$(CUR_DIR)/../../A-all-common/base/src/%.c
 	@echo "CC $<"
-	@$(CC) -ggdb $(WALL) $(CFLAGS) $(INCLUDE) $< -c -o $@
+	@$(CC) -ggdb $(WALL) $(INCLUDE) $< -c -o $@
 
 $(OBJ_DIR)/%.o:$(CUR_DIR)/../../A-all-common/user/src/%.c
 	@echo "CC $<"
-	@$(CC) -ggdb $(WALL) $(CFLAGS) $(INCLUDE) $< -c -o $@
+	@$(CC) -ggdb $(WALL) $(INCLUDE) $< -c -o $@
 
 $(OBJ_DIR)/%.o:$(CUR_DIR)/../common/src/%.c
 	@echo "CC $<"
-	@$(CC) -ggdb $(WALL) $(CFLAGS) $(INCLUDE) $< -c -o $@
+	@$(CC) -ggdb $(WALL) $(INCLUDE) $< -c -o $@
 
 $(OBJ_DIR)/%.o:$(CUR_DIR)/src/%.c
 	@echo "CC $<"
-	@$(CC) -ggdb $(WALL) $(CFLAGS) $(INCLUDE) $< -c -o $@
+	@$(CC) -ggdb $(WALL) $(INCLUDE) $< -c -o $@
 #-------------------------------------------------------
 #生成目标的依赖
 $(TARGET): $(OBJ)
 	@echo "--------------create $(TARGET)---------"
-	@$(CC) $(WALL) $(CFLAGS) $(SHARE_LIB_PATH) -o $@ $^ $(SHARE_LIB) $(STATIC_LIB)
+	@$(CC) $(WALL) $(SHARE_LIB_PATH) -o $@ $^ $(STATIC_LIB) $(SHARE_LIB)
 	$(STRIP) $(TARGET)
 	ls -alh $(TARGET)
 #-------------------------------------------------------
