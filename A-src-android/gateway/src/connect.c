@@ -109,5 +109,8 @@ bool send_data_to_server(char *data, int data_len)
         return false;
     }
 
+	LOG_TRACE_NORMAL("######>>> %s\n", data);
+
     return event_send_data(_cli_phone->event_buf, data, data_len);
 }
+

@@ -14,21 +14,30 @@ static inline bool _protocol_task_request_parse(
 		cli_phone_t *cli_phone, event_buf_t *event_buf, 
 		protocol_route_info_t *route_info)
 {
-	struct json_object *json_obj = NULL;
-	if (route_info == NULL)
+    struct json_object *json_obj = NULL;
+    if (route_info == NULL)
 	{
 		return false;
 	}
 
-	json_obj = json_tokener_parse(route_info->data);
+    json_obj = json_tokener_parse(route_info->data);
 	if (json_obj == NULL)
 	{
 		LOG_TRACE_NORMAL("json_tokener_parse error !\n");
 		return false;
 	}
 
-	json_object_put(json_obj);
-	return true;
+	cli_phone->cli_http = connect_http_server(
+				route_info, cli_phone, event_buf, "GET", 
+				"/api/v1/task/distribute?deviceUuid=skdjfdsjflksdjf", 
+				WEB_SERVER_HOST, WEB_SERVER_PORT, "", 0);
+	if (cli_phone->cli_http)
+	{
+		cli_phone->proxy_valid = true;
+	}
+
+    json_object_put(json_obj);
+    return true;
 }
 
 /*
@@ -57,7 +66,7 @@ static inline bool _protocol_task_response_parse(
 		LOG_TRACE_NORMAL("json_tokener_parse error !\n");
 		return false;
 	}
-	
+
 	json_object_put(json_obj);
 	return true;
 }
@@ -76,38 +85,12 @@ static inline bool _protocol_probe_parse(
 		cli_phone_t *cli_phone, event_buf_t *event_buf, 
 		protocol_route_info_t *route_info)
 {
-	char buff[1024] = {0};
 	if (route_info == NULL)
 	{
 		return false;
 	}
 
-	//测试代码，当探测帧解析正确，若当前有任务，则直接下发任务
-	task_brush_resp_t resp = {
-		.taskUuid = "0as321asf",
-		.taskGroupId = "323sdf13",
-		.taskType = "1",
-		.deviceUuid = "ZX12GH35",
-		.task = {
-			.fakeDeviceInfo = "http://deviceinfo.zip",
-			.proxyIP = "192.168.1.111",
-			.proxyPort = 4256,
-			.cpMarket = "oppo",
-			.appName = "今日头条",
-			.appPackage = "com.ss.android.article.lite",
-			.keyword = "头条",
-			.startTime = "2154684643",
-		},
-	};
-
-	if (protocol_task_pack_brush_response(&resp, buff, sizeof(buff)) == false)
-	{
-		LOG_TRACE_ERROR("protocol_becon_pack_response error !\n");
-		return false;
-	}
-
-	return protocol_route_pack(route_info->dst, route_info->src, 
-			buff, cli_phone->response, sizeof(cli_phone->response));
+	return true;
 }
 
 /*
@@ -202,8 +185,6 @@ static inline bool _protocol_data_parse(
 */
 bool protocol_parse(cli_phone_t *cli_phone, event_buf_t *event_buf)
 {
-	protocol_route_info_t route_info = {0};
-	
 	const char *context = NULL;
 	const char *header = NULL;
 	if (cli_phone == NULL 
@@ -222,12 +203,13 @@ bool protocol_parse(cli_phone_t *cli_phone, event_buf_t *event_buf)
 
 	LOG_TRACE_NORMAL(">>>>>>>> \n%s%s\n", header, context);
 
-	if (protocol_route_parse((char *) context, &route_info) == false)
+	memset(&cli_phone->route_info, 0, sizeof(protocol_route_info_t));
+	if (protocol_route_parse((char *) context, &cli_phone->route_info) == false)
 	{
 		LOG_TRACE_ERROR("protocol_route_parse error !\n");
 		return false;
 	}
 
-	return _protocol_data_parse(cli_phone, event_buf, &route_info);
+	return _protocol_data_parse(cli_phone, event_buf, &cli_phone->route_info);
 }
 

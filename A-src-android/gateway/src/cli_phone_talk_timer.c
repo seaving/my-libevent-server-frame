@@ -13,7 +13,7 @@
 cli_phone_talk_result_t cli_phone_timer(event_buf_t *event_buf, cli_phone_t *cli_phone)
 {
 	probe_req_t probe_req = {
-		.test = "test"
+		.test = "Are you OK ?"
 	};
 
 	//每隔probe_interval秒发送一次探测

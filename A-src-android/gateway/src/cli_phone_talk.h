@@ -4,6 +4,24 @@
 #include "event_executor.h"
 #include "cli_phone.h"
 
+typedef enum __cli_local_step_result__
+{
+	/*
+		执行当前step，不立即执行下一个step
+	*/
+	E_CLI_PHONE_STEP_RESULT_ONCE = 0,
+
+	/*
+		执行完当前step，立即再次执行下一个step
+	*/
+	E_CLI_PHONE_STEP_RESULT_AGAIN,
+
+	/*
+		执行完所有步骤
+	*/
+	E_CLI_PHONE_STEP_RESULT_FINISHED
+} cli_phone_res_t;
+
 typedef enum __cli_phone_talk_result__
 {
 	E_CLI_PHONE_TALK_CONTINUE,

@@ -70,7 +70,7 @@ bool proxy_server_read_cb(event_buf_t *event_buf, int conn_fd, void *arg)
 		return false;
 	}
 
-	if (cli_phone_talk(event_buf, cli_phone) == E_CLI_PHONE_TALK_FINISHED)
+	if (cli_local_talk(event_buf, cli_phone) == E_CLI_PHONE_TALK_FINISHED)
 	{
 		return false;
 	}
@@ -99,7 +99,7 @@ bool proxy_server_write_cb(event_buf_t *event_buf, int conn_fd, void *arg)
 		return false;
 	}
 
-	if (cli_phone_talk(event_buf, cli_phone) == E_CLI_PHONE_TALK_FINISHED)
+	if (cli_local_talk(event_buf, cli_phone) == E_CLI_PHONE_TALK_FINISHED)
 	{
 		return false;
 	}
@@ -131,3 +131,4 @@ bool proxy_server_error_cb(event_buf_t *event_buf, short what, int conn_fd, void
 
 	return true;
 }
+

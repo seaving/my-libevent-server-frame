@@ -20,6 +20,7 @@ typedef struct __schedule_server_conf__
 	int listen_count;					//监听队列长度
 	int io_timeout;						//IO超时时间(秒)
 	int queue_size;						//队列长度
+	unsigned int mempool_size;			//内存池大小
 } sch_ser_conf_t;
 
 typedef struct __schedule_log_conf__

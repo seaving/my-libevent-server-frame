@@ -78,6 +78,9 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
+	unsigned int connect_server_timeout = 5;
+	unsigned int connect_server_timecnt = connect_server_timeout;
+
 	for ( ; ; )
 	{
         if (proxy_server_is_ok() == false)
@@ -89,8 +92,18 @@ int main(int argc, char **argv)
 
         if (connect_server_is_ok() == false)
         {
-            LOG_TRACE_NORMAL("connect server start ...\n");
-            connect_server();
+        	connect_server_timecnt ++;
+        	if (connect_server_timecnt > connect_server_timeout)
+        	{
+            	LOG_TRACE_NORMAL("connect server start ...\n");
+            	connect_server();
+
+            	connect_server_timecnt = 0;
+			}
+        }
+        else
+        {
+			connect_server_timecnt = 0;
         }
 
 		_display_status();

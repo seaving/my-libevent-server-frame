@@ -23,6 +23,7 @@ typedef struct __cli_phone__
     unsigned int time_cnt;
     unsigned int probe_interval;
     event_buf_t *event_buf;
+    protocol_route_t route;
 } cli_phone_t;
 
 /*

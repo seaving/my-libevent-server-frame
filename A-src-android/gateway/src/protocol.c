@@ -1,8 +1,8 @@
 #include "includes.h"
 
 /*
-* 函数: _protocol_task_request_parse
-* 功能: 任务请求协议处理
+* 函数: _protocol_task_report_parse
+* 功能: 任务上报协议处理
 * 参数: cli_phone
 *		event_buf
 *		route_info		路由信息
@@ -10,10 +10,11 @@
 *		- false		 	失败
 * 说明: 
 */
-static inline bool _protocol_task_request_parse(
+static inline bool _protocol_task_report_parse(
 		cli_phone_t *cli_phone, event_buf_t *event_buf, 
 		protocol_route_info_t *route_info)
 {
+#if 0
 	struct json_object *json_obj = NULL;
 	if (route_info == NULL)
 	{
@@ -26,14 +27,27 @@ static inline bool _protocol_task_request_parse(
 		LOG_TRACE_NORMAL("json_tokener_parse error !\n");
 		return false;
 	}
+#endif
+	if (route_info == NULL)
+	{
+		return false;
+	}
 
+	char buf[1024] = {0};
+	protocol_route_pack(route_info->src, 
+		route_info->dst, route_info->cmd, 
+		route_info->data, buf, sizeof(buf));
+	send_data_to_server(buf, strlen(buf));
+
+#if 0
 	json_object_put(json_obj);
+#endif
 	return true;
 }
 
 /*
-* 函数: _protocol_task_response_parse
-* 功能: 任务请求协议处理
+* 函数: _protocol_task_alloc_parse
+* 功能: 任务分配协议处理
 * 参数: cli_phone
 *		event_buf
 *		route_info		路由信息
@@ -41,10 +55,11 @@ static inline bool _protocol_task_request_parse(
 *		- false 		失败
 * 说明: 
 */
-static inline bool _protocol_task_response_parse(
+static inline bool _protocol_task_alloc_parse(
 		cli_phone_t *cli_phone, event_buf_t *event_buf, 
 		protocol_route_info_t *route_info)
 {
+#if 0
 	struct json_object *json_obj = NULL;
 	if (route_info == NULL)
 	{
@@ -57,8 +72,22 @@ static inline bool _protocol_task_response_parse(
 		LOG_TRACE_NORMAL("json_tokener_parse error !\n");
 		return false;
 	}
-	
+#endif
+	if (route_info == NULL)
+	{
+		return false;
+	}
+
+	char buf[1024] = {0};
+	protocol_route_pack_no_header(route_info->src, 
+		route_info->dst, route_info->cmd, 
+		route_info->data, buf, sizeof(buf));
+
+	proxy_send_data_to_module(route_info->dst, buf, strlen(buf));
+
+#if 0
 	json_object_put(json_obj);
+#endif
 	return true;
 }
 
@@ -87,13 +116,16 @@ static inline bool _protocol_probe_parse(
 		.test = "I'm OK !",
 	};
 
+	cli_phone->route = route_info->src;
+	update_event_buf_array(route_info->src, event_buf);
+
 	if (protocol_becon_pack_response(&resp, buff, sizeof(buff)) == false)
 	{
 		LOG_TRACE_ERROR("protocol_becon_pack_response error !\n");
 		return false;
 	}
 
-	return protocol_route_pack(route_info->dst, route_info->src, 
+	return protocol_route_pack(route_info->dst, route_info->src, E_PROTOCOL_CMD_BECON, 
 			buff, cli_phone->response, sizeof(cli_phone->response));
 }
 
@@ -152,12 +184,12 @@ static inline bool _protocol_data_parse(
 		case E_PROTOCOL_CMD_TASK_REQUEST:
 		{
 			LOG_TRACE_NORMAL("CMD = E_PROTOCOL_CMD_TASK_REQUEST \n");
-			return _protocol_task_request_parse(cli_phone, event_buf, route_info);
+			return _protocol_task_report_parse(cli_phone, event_buf, route_info);
 		}
 		case E_PROTOCOL_CMD_TASK_RESPONSE:
 		{
 			LOG_TRACE_NORMAL("CMD = E_PROTOCOL_CMD_TASK_RESPONSE \n");
-			return _protocol_task_response_parse(cli_phone, event_buf, route_info);
+			return _protocol_task_alloc_parse(cli_phone, event_buf, route_info);
 		}
 		case E_PROTOCOL_CMD_PROBE:
 		{
@@ -207,13 +239,17 @@ bool protocol_parse(cli_phone_t *cli_phone, event_buf_t *event_buf)
 		return false;
 	}
 
+	LOG_TRACE_NORMAL("---------------------\n");
 	LOG_TRACE_NORMAL(">>>>>>>> \n%s%s\n", header, context);
+	LOG_TRACE_NORMAL("---------------------\n");
 
 	if (protocol_route_parse((char *) context, &route_info) == false)
 	{
 		LOG_TRACE_ERROR("protocol_route_parse error !\n");
 		return false;
 	}
+
+	update_event_buf_array(route_info.src, event_buf);
 
 	return _protocol_data_parse(cli_phone, event_buf, &route_info);
 }

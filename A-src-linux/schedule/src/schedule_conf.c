@@ -90,6 +90,9 @@ static inline bool _schedule_conf_ser_parse(sch_ser_conf_t *ser_conf, json_objec
 	set_value(ser_conf_obj, value_obj, "queue_size", 
 		ser_conf->queue_size = json_object_get_int(value_obj));
 
+	set_value(ser_conf_obj, value_obj, "mempool_size", 
+		ser_conf->mempool_size = json_object_get_int(value_obj));
+
 	return true;
 }
 

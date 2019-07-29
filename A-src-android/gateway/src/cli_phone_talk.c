@@ -1,22 +1,5 @@
 #include "includes.h"
 
-typedef enum __cli_phone_step_result__
-{
-	/*
-		执行当前step，不立即执行下一个step
-	*/
-	E_CLI_PHONE_STEP_RESULT_ONCE = 0,
-
-	/*
-		执行完当前step，立即再次执行下一个step
-	*/
-	E_CLI_PHONE_STEP_RESULT_AGAIN,
-
-	/*
-		执行完所有步骤
-	*/
-	E_CLI_PHONE_STEP_RESULT_FINISHED
-} cli_phone_res_t;
 //-------------------------------------------------------------------
 /*
 * 函数: _cli_phone_talk_response
@@ -62,8 +45,8 @@ static inline httpRequest_result_t _cli_phone_talk_recv_header(
 		return httpRequest_result;
 	}
 
-	//LOG_TRACE_NORMAL(">>>>>>>> \n%s", 
-		//httpRequest_get_header(&cli_phone->httpRequest));
+	LOG_TRACE_NORMAL(">>>>>>>> \n%s", 
+		httpRequest_get_header(&cli_phone->httpRequest));
 	return httpRequest_result;
 }
 
@@ -89,6 +72,7 @@ static inline bool _cli_phone_talk_check_header(
 	if (straddr_case(header, "X-Auth:") != header)
 	{
 		LOG_TRACE_NORMAL("can't find \"X-Auth\"!\n");
+		LOG_TRACE_NORMAL(">>> %s\n", header);
 		return false;
 	}
 

@@ -30,15 +30,18 @@ static inline bool _cli_phone_talk_response(
 		event_buf_t *event_buf, cli_phone_t *cli_phone)
 {
 	becon_resp_t resp = {
-		.test = "becon",
+		.test = "I'm OK !",
 	};
 
+	char data[1024] = {0};
 	char response[4096] = {0};
 
 	if (strlen(cli_phone->response) <= 0)
 	{
-		protocol_becon_pack_response(&resp, 
-			response, sizeof(response));
+		protocol_becon_pack_response(&resp, data, sizeof(data));
+		protocol_route_pack(cli_phone->route_info.dst, 
+			cli_phone->route_info.src, E_PROTOCOL_CMD_BECON, 
+			data, response, sizeof(response));
 	}
 	else
 	{

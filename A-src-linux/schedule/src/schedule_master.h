@@ -16,6 +16,8 @@ typedef struct __schedule_master__
 
 	server_t server;
 	SSL_CTX *ctx;
+
+	mem_pool_t *mempool;				//内存池
 } sch_master_t;
 
 /*

@@ -1,5 +1,6 @@
 #include "includes.h"
 
+
 /*
 * 函数: cli_phone_timer
 * 功能: 定时器下的回调函数
@@ -13,11 +14,12 @@
 cli_phone_talk_result_t cli_phone_timer(event_buf_t *event_buf, cli_phone_t *cli_phone)
 {
 	probe_req_t probe_req = {
-		.test = "Are you OK ?"
+		.test = "Are you OK ?",
 	};
 
 	//每隔probe_interval秒发送一次探测
-	if (cli_phone->time_cnt % cli_phone->probe_interval == 0)
+	if (cli_phone->probe_interval > 0 
+		&& cli_phone->time_cnt % cli_phone->probe_interval == 0)
 	{
 		if (protocol_probe_send_request(E_PROTOCOL_ROUTE_TASK, 
 				E_PROTOCOL_ROUTE_GATEWAY, event_buf, &probe_req) == false)

@@ -38,7 +38,7 @@
 /*
 	本地服务配置
 */
-#define SOCKET_LOCAL_NAME       "gw@localserver"
+#define SOCKET_LOCAL_NAME       "dzlua"
 
 /*
 	程序运行日志保存目录

@@ -27,6 +27,11 @@ static inline void _schedule_master_free()
 		SSL_CTX_free(sch_master.ctx);
 	}
 
+	if (sch_master.mempool)
+	{
+		mem_destroy_pool(sch_master.mempool);
+	}
+
 	schedule_conf_free(&sch_master.conf);
 
 	memset(&sch_master, 0, sizeof(sch_master_t));
@@ -60,7 +65,8 @@ bool schedule_master_init()
 	LOG_TRACE_NORMAL("ser_conf->cpu_num:       %d\n", sch_master.conf.ser_conf.cpu_num);
 	LOG_TRACE_NORMAL("ser_conf->io_timeout:    %d\n", sch_master.conf.ser_conf.io_timeout);
 	LOG_TRACE_NORMAL("ser_conf->server_port:   %d\n", sch_master.conf.ser_conf.server_port);
-	LOG_TRACE_NORMAL("ser_conf->queue_size:    %d\n", sch_master.conf.ser_conf.queue_size);
+	LOG_TRACE_NORMAL("ser_conf->queue_size:    %d\n", sch_master.conf.ser_conf.queue_size);	
+	LOG_TRACE_NORMAL("ser_conf->mempool_size:  %d\n", sch_master.conf.ser_conf.mempool_size);
 	LOG_TRACE_NORMAL("log_conf->dir:           %s\n", sch_master.conf.log_conf.dir);
 	LOG_TRACE_NORMAL("log_conf->stdout_file:   %s\n", sch_master.conf.log_conf.stdout_file);
 	LOG_TRACE_NORMAL("log_conf->stderr_file:   %s\n", sch_master.conf.log_conf.stderr_file);
@@ -82,7 +88,16 @@ bool schedule_master_init()
 		log_trace_stdout_init(sch_master.conf.log_conf.dir, sch_master.conf.log_conf.stdout_file);
 		log_trace_stderr_init(sch_master.conf.log_conf.dir, sch_master.conf.log_conf.stderr_file);
 	}
-
+#if 0
+	mem_pool_init();
+	sch_master.mempool = mem_create_pool(sch_master.conf.ser_conf.mempool_size);
+	if (sch_master.mempool == NULL)
+	{
+		LOG_TRACE_ERROR("mem_create_pool error !\n");
+		_schedule_master_free();
+		return false;
+	}
+#endif
 	if (sch_master.conf.ser_conf.worker_num <= 0 
 		|| sch_master.conf.ser_conf.worker_num > WORKER_MAX_NUM)
 	{

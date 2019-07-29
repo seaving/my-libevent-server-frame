@@ -18,9 +18,14 @@ void cli_phone_free(void *cli)
 	cli_phone_t *cli_phone = (cli_phone_t *) cli;
 	if (cli_phone)
 	{
-		if (cli_phone->free_proxy)
+		if (cli_phone->proxy_valid
+			&& cli_phone->cli_http)
 		{
-			cli_phone->free_proxy(cli_phone->proxy);
+			cli_phone->cli_http->proxy_valid = false;
+			cli_phone->cli_http->cli_phone = NULL;
+			cli_phone->cli_http->event_buf = NULL;
+			cli_phone->proxy_valid = false;
+			cli_phone->cli_http = NULL;
 		}
 
 		httpRequest_context_free(&cli_phone->httpRequest);

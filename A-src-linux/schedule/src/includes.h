@@ -19,12 +19,15 @@
 #include "bm.h"
 #include "user_string.h"
 #include "rlim.h"
+#include "memalloc.h"
+#include "mempool.h"
 
 /* common 头文件 */
 #include "protocol_route.h"
 #include "protocol_task.h"
 #include "protocol_probe.h"
 #include "protocol_becon.h"
+
 
 /* 本程序头文件 */
 #include "config.h"
@@ -39,6 +42,10 @@
 #include "schedule_worker.h"
 #include "schedule_master.h"
 #include "schedule_conf.h"
+#include "cli_http.h"
+#include "connect_http.h"
+#include "connect_http_cb.h"
+#include "cli_http_talk.h"
 
 #endif
 

@@ -2,6 +2,9 @@
 #define __CLI_PHONE_H__
 
 #include "http_request.h"
+#include "cli_http.h"
+
+typedef struct __cli_http__ cli_http_t;
 
 typedef enum __cli_phone_step__
 {
@@ -20,10 +23,10 @@ typedef struct __cli_phone__
     cli_phone_step_t step;
     char response[2048];
     unsigned int time_cnt;
-
+    protocol_route_info_t route_info;
 	/************* 代理相关 ************/
-    void *proxy;				//代理结构体指针
-    void (*free_proxy)(void *);	//释放代理回调
+	bool 		proxy_valid;			//代理释放有效标记
+    cli_http_t *cli_http;				//代理结构体指针
 } cli_phone_t;
 
 cli_phone_t *cli_phone_create();

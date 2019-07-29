@@ -8,6 +8,9 @@ typedef struct __proxy_server__
 
 static proxy_server_t _proxy_server;
 
+#define EVENT_BUF_SIZE			16
+static event_buf_t *_event_buf[EVENT_BUF_SIZE] = {NULL};
+
 /*
 * 函数: proxy_server_init
 * 功能: 初始化代理服务器
@@ -30,7 +33,8 @@ bool proxy_server_init()
 	_proxy_server.server.listen_count = 10;
 	_proxy_server.server.accept_max = 32;
 
-    _proxy_server.server.io_timeout = 60;
+    //不超时，因为做任务过程中可能会耗时比较久
+    _proxy_server.server.io_timeout = 0;
 
 	if (event_server_init(
 			NULL, 
@@ -98,6 +102,81 @@ bool proxy_server_is_ok()
 int proxy_server_get_accept_client_cnt()
 {
     return event_server_client_get_counts(&_proxy_server.server);
+}
+
+/*
+* 函数: proxy_send_data_to_local_client
+* 功能: 发送数据
+* 参数: event_buf		event_buf
+*		data		data
+*		datalen		长度
+* 返回: bool
+* 说明: 
+*/
+bool proxy_send_data_to_local_client(event_buf_t *event_buf, char *data, int datalen)
+{
+	char len[4] = {0};
+	if (event_buf == NULL)
+	{
+		return false;
+	}
+
+	len[0] = (datalen >> 24) & 0xff;
+	len[1] = (datalen >> 16) & 0xff;
+	len[2] = (datalen >> 8) & 0xff;
+	len[3] = (datalen >> 0) & 0xff;
+
+	event_send_data(event_buf, len, MIN(sizeof(int), sizeof(len)));
+	return event_send_data(event_buf, data, datalen);
+}
+
+/*
+* 函数: proxy_send_data_to_module
+* 功能: 发送数据到模块
+* 参数: route			模块
+*		data        数据
+*       datalen     长度
+* 返回: bool
+*       - false     失败
+* 说明: 
+*/
+bool proxy_send_data_to_module(protocol_route_t route, char *data, int data_len)
+{
+    if (data == NULL 
+        || data_len <= 0 
+        || route < 0 
+        || route >= EVENT_BUF_SIZE 
+        || route == E_PROTOCOL_ROUTE_UNKOWN 
+        || _event_buf[route] == NULL)
+    {
+        return false;
+    }
+
+	LOG_TRACE_NORMAL("###### route = %d, %s\n", route, data);
+
+	return proxy_send_data_to_local_client(_event_buf[route], data, data_len);
+}
+
+/*
+* 函数: update_event_buf_array
+* 功能: 更新数组
+* 参数: route			模块
+*		event_buf	event_buf
+* 返回: bool
+*       - false     失败
+* 说明: 
+*/
+bool update_event_buf_array(protocol_route_t route, event_buf_t *event_buf)
+{
+    if (route < 0 
+        || route >= EVENT_BUF_SIZE 
+        || route == E_PROTOCOL_ROUTE_UNKOWN)
+    {
+        return false;
+    }
+
+    _event_buf[route] = event_buf;
+    return true;
 }
 
 //本地模块连接上本地服务后，需要立即发送注册命令进行注册，通过注册可以区分哪个eventbuf对应的是哪个模块从而进行路由转发

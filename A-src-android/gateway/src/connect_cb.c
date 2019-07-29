@@ -21,6 +21,8 @@ bool connect_server_success_cb(event_buf_t *event_buf, int conn_fd, void *arg)
 		return false;
 	}
 
+	cli_phone->event_buf = event_buf;
+
 	return true;
 }
 
@@ -45,6 +47,8 @@ bool connect_talk_timer_cb(event_buf_t *event_buf, short what, int conn_fd, void
 	{
 		return false;
 	}
+
+	cli_phone->event_buf = event_buf;
 
 	if (cli_phone_timer(event_buf, cli_phone) == E_CLI_PHONE_TALK_FINISHED)
 	{
@@ -78,6 +82,8 @@ bool connect_talk_read_cb(event_buf_t *event_buf, int conn_fd, void *arg)
 		return false;
 	}
 
+	cli_phone->event_buf = event_buf;
+
 	if (cli_phone_talk(event_buf, cli_phone) == E_CLI_PHONE_TALK_FINISHED)
 	{
 		return false;
@@ -106,6 +112,8 @@ bool connect_talk_write_cb(event_buf_t *event_buf, int conn_fd, void *arg)
 	{
 		return false;
 	}
+
+	cli_phone->event_buf = event_buf;
 
 	if (cli_phone_talk(event_buf, cli_phone) == E_CLI_PHONE_TALK_FINISHED)
 	{
@@ -136,6 +144,8 @@ bool connect_talk_error_cb(event_buf_t *event_buf, short what, int conn_fd, void
 	{
 		return false;
 	}
+
+	cli_phone->event_buf = event_buf;
 
 	return true;
 }

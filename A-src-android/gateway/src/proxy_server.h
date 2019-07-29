@@ -49,4 +49,39 @@ bool proxy_server_is_ok();
 */
 int proxy_server_get_accept_client_cnt();
 
+/*
+* 函数: proxy_send_data_to_local_client
+* 功能: 发送数据
+* 参数: event_buf		event_buf
+*		data		data
+*		datalen		长度
+* 返回: bool
+* 说明: 
+*/
+bool proxy_send_data_to_local_client(event_buf_t *event_buf, char *data, int datalen);
+
+/*
+* 函数: proxy_send_data_to_module
+* 功能: 发送数据到模块
+* 参数: route			模块
+*		data        数据
+*       datalen     长度
+* 返回: bool
+*       - false     失败
+* 说明: 
+*/
+bool proxy_send_data_to_module(protocol_route_t route, char *data, int data_len);
+
+/*
+* 函数: update_event_buf_array
+* 功能: 更新数组
+* 参数: route			模块
+*		event_buf	event_buf
+* 返回: bool
+*       - false     失败
+* 说明: 
+*/
+bool update_event_buf_array(protocol_route_t route, event_buf_t *event_buf);
+
 #endif
+

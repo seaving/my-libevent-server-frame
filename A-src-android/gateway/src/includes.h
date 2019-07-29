@@ -19,6 +19,7 @@
 #include "uthash.h"
 #include "usr_uthash.h"
 #include "socket_local.h"
+#include "base64.h"
 
 /* common 头文件 */
 #include "protocol_route.h"
@@ -35,7 +36,9 @@
 #include "proxy_server.h"
 #include "proxy_server_cb.h"
 #include "connect_cb.h"
-
+#include "dev_state.h"
+#include "cli_local_talk.h"
+#include "obf.h"
 
 #endif
 
